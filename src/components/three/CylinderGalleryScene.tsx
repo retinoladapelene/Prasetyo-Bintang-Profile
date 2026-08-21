@@ -1377,6 +1377,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
     let smoothedScroll = 0;
     let initialized = false;
     let lastLightColorUpdate = 0;
+    let lastVideoCheckTime = 0;
     const raycaster = new THREE.Raycaster();
     const animate = () => {
       if (state.disposed) return;
@@ -1953,59 +1954,65 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
 
       // ── SMART VIDEO AUTO-PAUSE (GPU OPTIMIZATION) ──
       // Calculate which videos are currently visible on screen to save decoding CPU/GPU
-      const videoVisibility = new Map<HTMLVideoElement, boolean>();
-      state.videoElements.forEach(vid => videoVisibility.set(vid, false));
+      // OPTIMIZATION: Only check video visibility every 250ms instead of every frame (60x/sec).
+      // This prevents heavy CPU traversal of all meshes on mobile devices.
+      if (now - lastVideoCheckTime > 0.25) {
+        lastVideoCheckTime = now;
+        
+        const videoVisibility = new Map<HTMLVideoElement, boolean>();
+        state.videoElements.forEach(vid => videoVisibility.set(vid, false));
 
-      const markVideoVisible = (texture: any) => {
-        if (texture && texture.isVideoTexture && texture.userData && texture.userData.videoElement) {
-          videoVisibility.set(texture.userData.videoElement, true);
-        }
-      };
-
-      state.meshes.forEach(meshData => {
-        if (meshData.mesh.visible) {
-          markVideoVisible((meshData.mesh.material as any).map);
-        }
-      });
-
-      state.bgMeshes.forEach(meshData => {
-        if (meshData.mesh.visible) {
-          const mat = meshData.material as any;
-          markVideoVisible(mat.uniforms.uTexture?.value);
-          if (mat.uniforms.uVideoBlend?.value > 0.005) {
-            markVideoVisible(mat.uniforms.uVideoTexture?.value);
+        const markVideoVisible = (texture: any) => {
+          if (texture && texture.isVideoTexture && texture.userData && texture.userData.videoElement) {
+            videoVisibility.set(texture.userData.videoElement, true);
           }
-        }
-      });
+        };
 
-      state.wallPanels.forEach(wpData => {
-        if (wpData.mesh.visible) {
-          markVideoVisible((wpData.material as any).uniforms.uMap?.value);
-        }
-      });
+        state.meshes.forEach(meshData => {
+          if (meshData.mesh.visible) {
+            markVideoVisible((meshData.mesh.material as any).map);
+          }
+        });
 
-      videoVisibility.forEach((isVisible, video) => {
-        if (isVisible) {
-          if (video.paused) {
-            const p = video.play();
-            if (p !== undefined) {
-              (video as any)._playPromise = p;
-              p.catch(() => {});
+        state.bgMeshes.forEach(meshData => {
+          if (meshData.mesh.visible) {
+            const mat = meshData.material as any;
+            markVideoVisible(mat.uniforms.uTexture?.value);
+            if (mat.uniforms.uVideoBlend?.value > 0.005) {
+              markVideoVisible(mat.uniforms.uVideoTexture?.value);
             }
           }
-        } else {
-          if (!video.paused) {
-            const p = (video as any)._playPromise;
-            if (p !== undefined) {
-              p.then(() => {
+        });
+
+        state.wallPanels.forEach(wpData => {
+          if (wpData.mesh.visible) {
+            markVideoVisible((wpData.material as any).uniforms.uMap?.value);
+          }
+        });
+
+        videoVisibility.forEach((isVisible, video) => {
+          if (isVisible) {
+            if (video.paused) {
+              const p = video.play();
+              if (p !== undefined) {
+                (video as any)._playPromise = p;
+                p.catch(() => {});
+              }
+            }
+          } else {
+            if (!video.paused) {
+              const p = (video as any)._playPromise;
+              if (p !== undefined) {
+                p.then(() => {
+                  video.pause();
+                }).catch(() => {});
+              } else {
                 video.pause();
-              }).catch(() => {});
-            } else {
-              video.pause();
+              }
             }
           }
-        }
-      });
+        });
+      }
 
       renderer.render(scene, camera);
     };
