@@ -48,7 +48,7 @@ export default function PersonalPage() {
   };
 
   usePersonalAnimations({
-    mounted: mounted && !isLoading,
+    mounted: mounted,
     trackRef,
     imageRef,
     bgRef,

@@ -391,11 +391,11 @@ export function ArchiveGallery() {
           }
         }
         
-        // Force Lenis to scroll to exactly 1 panel away and lock user input
+        // Scroll ke panel terdekat tanpa mengunci scroll secara paksa (menghindari stutter di mobile)
         lenis.scrollTo(targetScrollY, { 
-          duration: 1.2, // Dipercepat agar scroll tidak terasa "terkunci" terlalu lama
+          duration: 1.2, 
           easing: (t: number) => 1 - Math.pow(1 - t, 4), // easeOutQuart
-          lock: true,
+          // lock: true dihapus karena menyebabkan konflik dengan native touch scroll (patah-patah)
           onComplete: () => {
             // Unlock snap only after fully settled
             setTimeout(() => {

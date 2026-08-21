@@ -312,7 +312,9 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
         const optimizeTexture = (tex: THREE.Texture | null) => {
           if (!tex) return;
           tex.anisotropy = maxAnisotropy;
-          tex.minFilter = isMobile ? THREE.LinearFilter : THREE.LinearMipmapLinearFilter; // Pakai filter lebih ringan di mobile
+          // Mipmaps are essential for performance when textures are minified (drawn smaller on mobile).
+          // Disabling them (LinearFilter) causes severe GPU cache misses and massive lag.
+          tex.minFilter = THREE.LinearMipmapLinearFilter;
           tex.magFilter = THREE.LinearFilter;
           tex.needsUpdate = true;
         };
