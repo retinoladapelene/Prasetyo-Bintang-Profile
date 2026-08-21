@@ -11,17 +11,13 @@ if (typeof window !== "undefined") {
 
 export function SmoothScroll({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
-
     const lenis = new Lenis({
-      duration: isTouchDevice ? 0.8 : 1.2,
+      duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      syncTouch: isTouchDevice, // Hanya ambil alih touch jika di touch device (atau emulasinya)
-      wheelMultiplier: 1,
-      touchMultiplier: 1, // Turunkan dari 2 ke 1 agar tidak terlalu agresif
+      syncTouch: false, // Dimatikan karena kita sudah menghapus lock:true di ArchiveGallery. Biarkan native scroll mengambil alih agar touch tidak patah-patah.
     });
 
     (window as any).lenis = lenis;

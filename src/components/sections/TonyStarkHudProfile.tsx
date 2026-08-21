@@ -496,26 +496,26 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
             fromY={-35}
             className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6 lg:right-28 lg:top-8 pointer-events-none"
           >
-          <Panel3D mouseX={mx} mouseY={my} depth={0.32} className="flex items-center gap-3">
-            <div className="flex items-center gap-2 sm:gap-4 rounded-full border border-[var(--foreground)]/20 bg-[var(--background)]/70 px-3 py-1 sm:px-4 sm:py-1.5 text-[8px] sm:text-[10px] uppercase tracking-[0.16em] text-[var(--foreground)] drop-shadow-[0_0_10px_rgb(var(--theme-primary-rgb)/0.4)] backdrop-blur-md">
-              <span><b className="text-[var(--theme-primary)]">CLOCK</b> {clockTime}</span>
-              <span><b className="text-[var(--theme-primary)]">NET</b> <span className="font-bold text-[var(--theme-primary)]">STABLE</span></span>
-            </div>
-            <div className="relative hidden h-9 w-9 items-center justify-center rounded-full border border-[rgb(var(--theme-primary-rgb)/0.5)] shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.4)] xl:flex">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 rounded-full border border-dashed border-[rgb(var(--theme-primary-rgb)/0.6)]"
-              />
-              <div className="h-1.5 w-1.5 rounded-full bg-[var(--theme-primary)] shadow-[0_0_8px_var(--theme-primary)]" />
-              <div className="absolute h-full w-px bg-[rgb(var(--theme-primary-rgb)/0.4)]" />
-              <div className="absolute h-px w-full bg-[rgb(var(--theme-primary-rgb)/0.4)]" />
-            </div>
-          </Panel3D>
-        </AnimatedHudElement>
+            <Panel3D mouseX={mx} mouseY={my} depth={0.32} className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-4 rounded-full border border-[var(--foreground)]/20 bg-[var(--background)]/70 px-3 py-1 sm:px-4 sm:py-1.5 text-[8px] sm:text-[10px] uppercase tracking-[0.16em] text-[var(--foreground)] drop-shadow-[0_0_10px_rgb(var(--theme-primary-rgb)/0.4)] backdrop-blur-md">
+                <span><b className="text-[var(--theme-primary)]">CLOCK</b> {clockTime}</span>
+                <span><b className="text-[var(--theme-primary)]">NET</b> <span className="font-bold text-[var(--theme-primary)]">STABLE</span></span>
+              </div>
+              <div className="relative hidden h-9 w-9 items-center justify-center rounded-full border border-[rgb(var(--theme-primary-rgb)/0.5)] shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.4)] xl:flex">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 rounded-full border border-dashed border-[rgb(var(--theme-primary-rgb)/0.6)]"
+                />
+                <div className="h-1.5 w-1.5 rounded-full bg-[var(--theme-primary)] shadow-[0_0_8px_var(--theme-primary)]" />
+                <div className="absolute h-full w-px bg-[rgb(var(--theme-primary-rgb)/0.4)]" />
+                <div className="absolute h-px w-full bg-[rgb(var(--theme-primary-rgb)/0.4)]" />
+              </div>
+            </Panel3D>
+          </AnimatedHudElement>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="absolute left-4 right-4 top-[60px] z-30 flex flex-col gap-3 lg:gap-4 lg:right-auto lg:left-8 xl:left-12 lg:w-[310px] xl:w-[330px] pointer-events-none"
           animate={{ opacity: hudOpacity }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -601,13 +601,13 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                       onFocus={() => handleNodeEnter(category.id)}
                       onClick={() => activeCategory === category.id ? setActiveCategory(null) : handleNodeEnter(category.id)}
                       className={`group flex w-[200px] shrink-0 snap-start lg:w-full items-center gap-3 rounded-xl border px-3 py-2 lg:px-3.5 lg:py-2.5 text-left transition-all cursor-pointer backdrop-blur-md ${isActive
-                          ? "border-[var(--theme-primary)] bg-[rgb(var(--theme-primary-rgb)/0.15)] shadow-[0_0_22px_rgb(var(--theme-primary-rgb)/0.5)] scale-[1.02]"
-                          : "border-[var(--foreground)]/20 bg-[var(--background)]/70 hover:border-[var(--theme-primary)]/70 hover:bg-[var(--background)]/90 hover:shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.35)]"
+                        ? "border-[var(--theme-primary)] bg-[rgb(var(--theme-primary-rgb)/0.15)] shadow-[0_0_22px_rgb(var(--theme-primary-rgb)/0.5)] scale-[1.02]"
+                        : "border-[var(--foreground)]/20 bg-[var(--background)]/70 hover:border-[var(--theme-primary)]/70 hover:bg-[var(--background)]/90 hover:shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.35)]"
                         }`}
                     >
                       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all ${isActive
-                          ? "border-[var(--theme-primary)] bg-[rgb(var(--theme-primary-rgb)/0.25)] shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.7)] text-[var(--theme-primary)]"
-                          : "border-[var(--foreground)]/25 bg-[var(--background)]/50 text-[var(--foreground)]/80 group-hover:border-[var(--theme-primary)] group-hover:text-[var(--theme-primary)]"
+                        ? "border-[var(--theme-primary)] bg-[rgb(var(--theme-primary-rgb)/0.25)] shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.7)] text-[var(--theme-primary)]"
+                        : "border-[var(--foreground)]/25 bg-[var(--background)]/50 text-[var(--foreground)]/80 group-hover:border-[var(--theme-primary)] group-hover:text-[var(--theme-primary)]"
                         }`}>
                         <Icon className="h-4 w-4" strokeWidth={1.8} />
                       </div>
@@ -966,13 +966,13 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
           </AnimatePresence>
         </motion.div>
 
-          <AnimatedHudElement
-            smoothProgress={combinedProgress}
-            enterRange={[0.195, 0.210]}
-            exitRange={[0.260, 0.275]}
-            fromY={35}
-            className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-8 sm:right-8 z-30 pointer-events-none"
-          >
+        <AnimatedHudElement
+          smoothProgress={combinedProgress}
+          enterRange={[0.195, 0.210]}
+          exitRange={[0.260, 0.275]}
+          fromY={35}
+          className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-8 sm:right-8 z-30 pointer-events-none"
+        >
           <Panel3D mouseX={mx} mouseY={my} depth={0.38}
             className="flex items-center justify-center"
           >
@@ -984,52 +984,48 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 20, scale: 0.95 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className={`flex items-center gap-4 text-[var(--foreground)] w-full max-w-3xl px-6 py-4 rounded-2xl border bg-[var(--background)]/80 backdrop-blur-xl pointer-events-auto transition-all duration-300 ${
-                    isListening 
-                      ? 'border-red-500/80 shadow-[0_0_30px_rgba(239,68,68,0.3)] animate-pulse' 
-                      : isSpeaking 
-                        ? 'border-green-500/80 shadow-[0_0_30px_rgba(34,197,94,0.3)]' 
-                        : isProcessing 
-                          ? 'border-blue-500/80 shadow-[0_0_30px_rgba(59,130,246,0.3)]'
-                          : 'border-[var(--theme-primary)]/40 shadow-[0_0_30px_rgb(var(--theme-primary-rgb)/0.2)]'
-                  }`}
+                  className={`flex items-center gap-4 text-[var(--foreground)] w-full max-w-3xl px-6 py-4 rounded-2xl border bg-[var(--background)]/80 backdrop-blur-xl pointer-events-auto transition-all duration-300 ${isListening
+                    ? 'border-red-500/80 shadow-[0_0_30px_rgba(239,68,68,0.3)] animate-pulse'
+                    : isSpeaking
+                      ? 'border-green-500/80 shadow-[0_0_30px_rgba(34,197,94,0.3)]'
+                      : isProcessing
+                        ? 'border-blue-500/80 shadow-[0_0_30px_rgba(59,130,246,0.3)]'
+                        : 'border-[var(--theme-primary)]/40 shadow-[0_0_30px_rgb(var(--theme-primary-rgb)/0.2)]'
+                    }`}
                 >
                   <div className="relative flex items-center justify-center group cursor-pointer" onClick={startListening}>
                     {!isSpeaking && !isListening && !isProcessing && (
                       <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--theme-primary)] opacity-40 animate-ping pointer-events-none" />
                     )}
-                    <button 
-                      className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 pointer-events-auto ${
-                        isListening 
-                          ? 'border-red-500 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)] bg-red-500/10 scale-110' 
-                          : isProcessing
-                            ? 'border-blue-500 text-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.8)] bg-blue-500/10'
-                            : isSpeaking
-                              ? 'border-green-500 text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.8)] bg-green-500/10'
-                              : 'border-[var(--theme-primary)] text-[var(--theme-primary)] shadow-[0_0_20px_rgb(var(--theme-primary-rgb)/0.8)] bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)]/30 hover:scale-110'
-                      }`}
+                    <button
+                      className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 pointer-events-auto ${isListening
+                        ? 'border-red-500 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)] bg-red-500/10 scale-110'
+                        : isProcessing
+                          ? 'border-blue-500 text-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.8)] bg-blue-500/10'
+                          : isSpeaking
+                            ? 'border-green-500 text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.8)] bg-green-500/10'
+                            : 'border-[var(--theme-primary)] text-[var(--theme-primary)] shadow-[0_0_20px_rgb(var(--theme-primary-rgb)/0.8)] bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)]/30 hover:scale-110'
+                        }`}
                     >
-                      <div className={`absolute inset-0.5 rounded-full border-2 border-dashed ${
-                        isListening ? 'border-red-500/80 animate-[spin_2s_linear_infinite]' : 
+                      <div className={`absolute inset-0.5 rounded-full border-2 border-dashed ${isListening ? 'border-red-500/80 animate-[spin_2s_linear_infinite]' :
                         isProcessing ? 'border-blue-500/80 animate-[spin_1s_linear_infinite]' :
-                        isSpeaking ? 'border-green-500/80 animate-[spin_3s_linear_infinite]' :
-                        'border-[rgb(var(--theme-primary-rgb)/0.8)] animate-[spin_4s_linear_infinite]'
-                      }`} />
+                          isSpeaking ? 'border-green-500/80 animate-[spin_3s_linear_infinite]' :
+                            'border-[rgb(var(--theme-primary-rgb)/0.8)] animate-[spin_4s_linear_infinite]'
+                        }`} />
                       {isListening ? <MicOff size={24} /> : isProcessing ? <Brain size={24} className="animate-pulse" /> : isSpeaking ? <Volume2 size={24} /> : <Mic size={24} />}
                     </button>
                   </div>
-                  
+
                   <div className="min-w-0 flex-1 flex flex-col justify-center">
-                    <span className={`text-[12px] font-black uppercase tracking-[0.16em] mb-1 ${
-                      isListening ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]' :
+                    <span className={`text-[12px] font-black uppercase tracking-[0.16em] mb-1 ${isListening ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]' :
                       isProcessing ? 'text-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]' :
-                      isSpeaking ? 'text-green-500 drop-shadow-[0_0_10px_rgba(34,197,94,0.8)]' :
-                      'text-[var(--theme-primary)] drop-shadow-[0_0_10px_var(--theme-primary)]'
-                    }`}>
-                      {isListening ? '🎙️ SILAKAN BICARA SEKARANG...' : 
-                       isProcessing ? '⚙️ AI SEDANG BERPIKIR...' : 
-                       isSpeaking ? '🔊 AI SEDANG MENJAWAB...' : 
-                       '👉 KLIK TOMBOL MIC UNTUK BERTANYA'}
+                        isSpeaking ? 'text-green-500 drop-shadow-[0_0_10px_rgba(34,197,94,0.8)]' :
+                          'text-[var(--theme-primary)] drop-shadow-[0_0_10px_var(--theme-primary)]'
+                      }`}>
+                      {isListening ? 'SILAKAN BICARA SEKARANG...' :
+                        isProcessing ? 'SAYA SEDANG BERPIKIR...' :
+                          isSpeaking ? 'SAYA SEDANG MENJAWAB...' :
+                            'KLIK TOMBOL MIC UNTUK BERTANYA'}
                     </span>
                     <AnimatePresence mode="wait">
                       <motion.div
@@ -1039,11 +1035,11 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                         exit={{ opacity: 0, y: -4 }}
                         className="min-w-0 truncate text-[14px] leading-relaxed text-[var(--foreground)] drop-shadow-[0_0_8px_var(--foreground)] font-semibold"
                       >
-                        {isListening ? "Saya mendengarkan, silakan bicara..." :
-                        isProcessing ? "Menganalisis suara Anda..." : 
-                        isSpeaking ? "[ STARS sedang berbicara ]" : 
-                        (transcript) ? `User: "${transcript}"` : 
-                        "Halo, saya STARS. Apa yang ingin Anda ketahui tentang Prase?"}
+                        {isListening ? "I'm all ears, ask me..." :
+                          isProcessing ? "Menganalisa suara Anda..." :
+                            isSpeaking ? "[ Saya sedang berbicara ]" :
+                              (transcript) ? `Anda: "${transcript}"` :
+                                "Halo, saya Prasetyo. Ask me anything?"}
                       </motion.div>
                     </AnimatePresence>
                   </div>
