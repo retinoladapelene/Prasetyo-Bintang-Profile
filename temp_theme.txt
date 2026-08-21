@@ -1,0 +1,1110 @@
+﻿"use client";
+
+import React, { useEffect, useRef, useState, useCallback, memo, useMemo } from "react";
+import { createPortal } from "react-dom";
+import {
+    motion,
+    useScroll,
+    useTransform,
+    useInView,
+    AnimatePresence,
+    useMotionValue,
+    useSpring,
+    useVelocity,
+    PanInfo,
+} from "framer-motion";
+import { Layers3, Palette, Wrench, ChevronRight, Hexagon, Edit3, X, Box, Sparkles, Code2, GitBranch } from "lucide-react";
+import Image from "next/image";
+import dynamic from "next/dynamic";
+import { ParallaxContent } from "@/components/ui/ParallaxContent";
+
+
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+// THEME COLORS
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+export const themeColors = [
+    { id: "gold", name: "Mind Stone", label: "Mind", primary: "#FFC107", light: "#FFF8E1", dot: "#FFCA28", paintHex: 0xffc107 },
+    { id: "amethyst", name: "Power Stone", label: "Power", primary: "#9C27B0", light: "#F3E5F5", dot: "#AB47BC", paintHex: 0x9c27b0 },
+    { id: "alexandrite", name: "Soul Stone", label: "Soul", primary: "#FF9800", light: "#FFF3E0", dot: "#FFA726", paintHex: 0xff9800 },
+    { id: "sapphire", name: "Space Stone", label: "Space", primary: "#2196F3", light: "#E3F2FD", dot: "#42A5F5", paintHex: 0x2196f3 },
+    { id: "emerald", name: "Time Stone", label: "Time", primary: "#4CAF50", light: "#E8F5E9", dot: "#66BB6A", paintHex: 0x4caf50 },
+    { id: "ruby", name: "Reality Stone", label: "Reality", primary: "#F44336", light: "#FFEBEE", dot: "#EF5350", paintHex: 0xf44336 },
+];
+
+// Generate a <style> tag that overrides all Tailwind purple-* with theme color
+export function ThemeStyleInjector({ activeThemeId }: { activeThemeId: string }) {
+    const theme = themeColors.find(t => t.id === activeThemeId) || themeColors[0];
+
+    // Map Tailwind purple shades to theme color with opacity variants
+    const hexToRgb = (hex: string) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `${r} ${g} ${b}`;
+    };
+
+    const rgb = hexToRgb(theme.primary);
+    const dotRgb = hexToRgb(theme.dot);
+    const lightRgb = hexToRgb(theme.light);
+
+    // CSS that overrides every Tailwind purple variant globally
+    const css = `
+        :root {
+            --theme-primary: ${theme.primary};
+            --theme-primary-rgb: ${rgb};
+            --theme-dot: ${theme.dot};
+            --theme-dot-rgb: ${dotRgb};
+            --theme-light: ${theme.light};
+            --theme-light-rgb: ${lightRgb};
+        }
+        /* Override all Tailwind purple classes */
+        .text-purple-50  { color: rgb(var(--theme-light-rgb) / 0.3) !important; }
+        .text-purple-100 { color: rgb(var(--theme-light-rgb)) !important; }
+        .text-purple-200 { color: rgb(var(--theme-dot-rgb) / 0.5) !important; }
+        .text-purple-300 { color: rgb(var(--theme-dot-rgb) / 0.7) !important; }
+        .text-purple-400 { color: rgb(var(--theme-dot-rgb)) !important; }
+        .text-purple-500 { color: rgb(var(--theme-primary-rgb) / 0.8) !important; }
+        .text-purple-600 { color: rgb(var(--theme-primary-rgb)) !important; }
+        .text-purple-700 { color: rgb(var(--theme-primary-rgb)) !important; }
+        .text-purple-800 { color: rgb(var(--theme-primary-rgb)) !important; }
+        .text-purple-900 { color: rgb(var(--theme-primary-rgb)) !important; }
+
+        /* Pseudo-elements and variants */
+        .first-letter\\:text-purple-600::first-letter { color: rgb(var(--theme-primary-rgb)) !important; }
+
+        .bg-purple-50  { background-color: rgb(var(--theme-light-rgb) / 0.4) !important; }
+        .bg-purple-100 { background-color: rgb(var(--theme-light-rgb)) !important; }
+        .bg-purple-200 { background-color: rgb(var(--theme-dot-rgb) / 0.35) !important; }
+        .bg-purple-300 { background-color: rgb(var(--theme-dot-rgb) / 0.6) !important; }
+        .bg-purple-400 { background-color: rgb(var(--theme-dot-rgb)) !important; }
+        .bg-purple-500 { background-color: rgb(var(--theme-primary-rgb) / 0.8) !important; }
+        .bg-purple-600 { background-color: rgb(var(--theme-primary-rgb)) !important; }
+        .bg-purple-700 { background-color: rgb(var(--theme-primary-rgb)) !important; }
+
+        .border-purple-50  { border-color: rgb(var(--theme-light-rgb) / 0.4) !important; }
+        .border-purple-100 { border-color: rgb(var(--theme-light-rgb)) !important; }
+        .border-purple-200 { border-color: rgb(var(--theme-dot-rgb) / 0.4) !important; }
+        .border-purple-300 { border-color: rgb(var(--theme-dot-rgb) / 0.7) !important; }
+        .border-purple-400 { border-color: rgb(var(--theme-dot-rgb)) !important; }
+        .border-purple-600 { border-color: rgb(var(--theme-primary-rgb)) !important; }
+
+        .from-purple-200 { --tw-gradient-from: rgb(var(--theme-dot-rgb) / 0.4) !important; }
+        .from-purple-300 { --tw-gradient-from: rgb(var(--theme-dot-rgb) / 0.6) !important; }
+        .from-purple-400 { --tw-gradient-from: rgb(var(--theme-dot-rgb)) !important; }
+        .from-purple-500 { --tw-gradient-from: rgb(var(--theme-primary-rgb) / 0.8) !important; }
+        .from-purple-600 { --tw-gradient-from: rgb(var(--theme-primary-rgb)) !important; }
+        .to-purple-300   { --tw-gradient-to: rgb(var(--theme-dot-rgb) / 0.6) !important; }
+        .to-purple-400   { --tw-gradient-to: rgb(var(--theme-dot-rgb)) !important; }
+        .to-purple-600   { --tw-gradient-to: rgb(var(--theme-primary-rgb)) !important; }
+
+        /* Opacity variants */
+        .text-purple-600\\/60 { color: rgb(var(--theme-primary-rgb) / 0.6) !important; }
+        .text-purple-600\\/50 { color: rgb(var(--theme-primary-rgb) / 0.5) !important; }
+        .text-purple-600\\/40 { color: rgb(var(--theme-primary-rgb) / 0.4) !important; }
+        .text-purple-600\\/\\[0\\.04\\] { color: rgb(var(--theme-primary-rgb) / 0.04) !important; }
+        .text-purple-500\\/30 { color: rgb(var(--theme-primary-rgb) / 0.3) !important; }
+        .text-purple-400\\/20 { color: rgb(var(--theme-dot-rgb) / 0.2) !important; }
+        .text-purple-400\\/30 { color: rgb(var(--theme-dot-rgb) / 0.3) !important; }
+        .bg-purple-600\\/20  { background-color: rgb(var(--theme-primary-rgb) / 0.2) !important; }
+        .bg-purple-400\\/10  { background-color: rgb(var(--theme-dot-rgb) / 0.1) !important; }
+        .bg-purple-400\\/40  { background-color: rgb(var(--theme-dot-rgb) / 0.4) !important; }
+        .border-purple-400\\/10 { border-color: rgb(var(--theme-dot-rgb) / 0.1) !important; }
+        .border-purple-400\\/20 { border-color: rgb(var(--theme-dot-rgb) / 0.2) !important; }
+        .border-purple-400\\/40 { border-color: rgb(var(--theme-dot-rgb) / 0.4) !important; }
+        .border-purple-100\\/80 { border-color: rgb(var(--theme-light-rgb) / 0.8) !important; }
+        .from-purple-400\\/40 { --tw-gradient-from: rgb(var(--theme-dot-rgb) / 0.4) !important; }
+
+        /* hover: variants */
+        .hover\\:text-purple-800:hover { color: rgb(var(--theme-primary-rgb)) !important; }
+        .hover\\:border-purple-300:hover { border-color: rgb(var(--theme-dot-rgb) / 0.7) !important; }
+        .group:hover .group-hover\\:text-purple-600 { color: rgb(var(--theme-primary-rgb)) !important; }
+        .group:hover .group-hover\\:bg-purple-400\\/40 { background-color: rgb(var(--theme-dot-rgb) / 0.4) !important; }
+        .group:hover .group-hover\\:border-purple-400\\/30 { border-color: rgb(var(--theme-dot-rgb) / 0.3) !important; }
+        .text-purple-600\\/80 { color: rgb(var(--theme-primary-rgb) / 0.8) !important; }
+        .text-purple-900\\/80 { color: rgb(var(--theme-primary-rgb) / 0.8) !important; }
+        .text-purple-600\\/40 { color: rgb(var(--theme-primary-rgb) / 0.4) !important; }
+        .text-purple-600\\/30 { color: rgb(var(--theme-primary-rgb) / 0.3) !important; }
+
+        :root {
+            --theme-shadow-rgb: ${rgb};
+        }
+
+        /* Selection highlight */
+        .selection\\:bg-purple-500\\/30 ::selection,
+        .selection\\:bg-purple-500\\/30::selection { background: rgb(var(--theme-primary-rgb) / 0.3) !important; }
+
+        /* Drop shadow utilities */
+        .drop-shadow-md { filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06)); }
+
+        /* Radial gradient overrides */
+        .bg-radial-gradient.from-purple-200\\/50 { background: radial-gradient(ellipse at center, rgb(var(--theme-dot-rgb) / 0.5) 0%, transparent 70%) !important; }
+        .bg-radial-gradient.from-purple-100\\/30 { background: radial-gradient(ellipse at center, rgb(var(--theme-light-rgb) / 0.3) 0%, transparent 70%) !important; }
+    `;
+
+    return <style dangerouslySetInnerHTML={{ __html: css }} />;
+}
+
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+// TOOL DATA
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+const tools = [
+    { id: "figma", name: "Figma", category: "UI/UX & WIREFRAMING", usage: 90, desc: "Merancang ide visual, sistem desain (design system), serta prototipe antarmuka sebelum tahap pengkodean.", color: "#F24E1E", light: "#FFE4E6", dot: "#FF7262", side: "left", tasks: ["UI/UX Design", "Wireframing", "Design System"] },
+    { id: "antigravity", name: "Antigravity", category: "AI AGENTIC CODING", usage: 95, desc: "Asisten AI agentic cerdas untuk mempercepat eksekusi kode, arsitektur sistem, dan otomatisasi komponen.", color: "#06B6D4", light: "#ECFEFF", dot: "#00E5FF", side: "left", tasks: ["Agentic AI", "Pair Programming", "Speed Coding"] },
+    { id: "vscode", name: "VS Code & Web Stack", category: "FRONTEND DEVELOPMENT", usage: 88, desc: "Lingkungan eksekusi utama untuk merangkai komponen React, Next.js, Vite, dan Tailwind CSS.", color: "#2563EB", light: "#EFF6FF", dot: "#3B82F6", side: "right", tasks: ["React / Vite", "Tailwind CSS", "TypeScript"] },
+    { id: "github", name: "GitHub & Vercel", category: "VERSION & DEPLOYMENT", usage: 85, desc: "Manajemen repositori kode, kontrol versi Git, dan otomatisasi peluncuran aplikasi ke server cloud.", color: "#059669", light: "#ECFDF5", dot: "#10B981", side: "right", tasks: ["Git Version", "CI/CD Pipeline", "Cloud Deploy"] },
+];
+
+const allSkills = ["UI/UX Design", "Figma", "Antigravity AI", "React / Vite", "Next.js", "Tailwind CSS", "TypeScript", "Looker Studio", "Git & Vercel", "Quality Control", "Web Development"];
+
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+// HELPERS
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+function SplitReveal({ text, delay = 0, className = "" }: { text: string; delay?: number; className?: string }) {
+    const ref = useRef<HTMLSpanElement>(null);
+    const inView = useInView(ref, { once: true, margin: "-60px" });
+    return (
+        <span ref={ref} className={`inline-block overflow-hidden ${className}`} aria-label={text}>
+            <span className="inline-flex flex-wrap">
+                {text.split("").map((char, i) => (
+                    <motion.span key={i} initial={{ y: "110%", opacity: 0 }}
+                        animate={inView ? { y: "0%", opacity: 1 } : {}}
+                        transition={{ duration: 0.65, delay: delay + i * 0.028, ease: [0.22, 1, 0.36, 1] }}
+                        className="inline-block" style={{ whiteSpace: char === " " ? "pre" : "normal" }}>
+                        {char}
+                    </motion.span>
+                ))}
+            </span>
+        </span>
+    );
+}
+
+function SkillMarquee({ skills, theme }: { skills: string[]; theme: typeof themeColors[0] }) {
+    const doubled = [...skills, ...skills, ...skills, ...skills];
+    return (
+        <div className="overflow-hidden py-3 relative">
+            <style>{`
+                @keyframes marquee {
+                    0% { transform: translateX(0%); }
+                    100% { transform: translateX(-50%); }
+                }
+                .animate-marquee {
+                    animation: marquee 24s linear infinite;
+                    will-change: transform;
+                }
+            `}</style>
+            <div className="flex gap-3 whitespace-nowrap w-max animate-marquee">
+                {doubled.map((skill, i) => (
+                    <span key={i} className="px-4 py-1.5 rounded-full border font-outfit text-[9px] font-black uppercase tracking-[0.35em] flex-shrink-0 transition-colors duration-500"
+                        style={{ borderColor: `${theme.primary}40`, background: `${theme.primary}15`, color: theme.primary, textShadow: `0 0 8px ${theme.primary}40` }}>
+                        {skill}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function ToolIndicator({ tool, index, side, onHover, theme }: {
+    tool: typeof tools[0]; index: number; side: "left" | "right";
+    onHover: (c: string | null) => void; theme: typeof themeColors[0];
+}) {
+    const [hovered, setHovered] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+    const inView = useInView(ref, { once: true, margin: "-40px" });
+
+    const getIcon = () => {
+        const s = 18;
+        if (tool.id === "figma") return <Layers3 size={s} />;
+        if (tool.id === "antigravity") return <Sparkles size={s} />;
+        if (tool.id === "vscode") return <Code2 size={s} />;
+        if (tool.id === "github") return <GitBranch size={s} />;
+        return <Wrench size={s} />;
+    };
+
+    // Hero character mapping
+    const heroMap: Record<string, { src: string; tint: string; glowColor: string; position: string }> = {
+        figma: { src: "/images/characters/ironman.png", tint: "rgba(180, 40, 20, 0.12)", glowColor: "#FF4500", position: "right -10% bottom -10%" },
+        antigravity: { src: "/images/characters/Thor.png", tint: "rgba(140, 30, 50, 0.10)", glowColor: "#4FC3F7", position: "right -5% bottom -15%" },
+        vscode: { src: "/images/characters/reed.png", tint: "rgba(30, 80, 180, 0.10)", glowColor: "#42A5F5", position: "right -10% bottom -10%" },
+        github: { src: "/images/characters/hulk.png", tint: "rgba(40, 120, 40, 0.10)", glowColor: "#66BB6A", position: "right -10% bottom -15%" },
+    };
+    const hero = heroMap[tool.id];
+
+    return (
+        <motion.div ref={ref} initial={{ opacity: 0, x: side === "left" ? -40 : 40 }} animate={inView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.8, delay: index * 0.15, ease: [0.22, 1, 0.36, 1] }}
+            onMouseEnter={() => { setHovered(true); onHover(tool.color); }}
+            onMouseLeave={() => { setHovered(false); onHover(null); }}
+            className="relative cursor-default">
+            <motion.div animate={{ boxShadow: hovered ? `0 16px 48px -8px ${tool.color}30` : "none", y: hovered ? -3 : 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-[var(--foreground)]/5 backdrop-blur-xl border border-[var(--foreground)]/10 p-4 md:p-6"
+                style={{ minHeight: hero ? 180 : undefined }}>
+                {/* Tinted background overlay matching hero color */}
+                <motion.div animate={{ opacity: hovered ? 1 : 0 }} className="pointer-events-none absolute inset-0 rounded-2xl md:rounded-3xl"
+                    style={{ background: `linear-gradient(135deg, ${tool.color}08, ${tool.color}18)` }} />
+                {/* Hero character image - masked into card */}
+                {hero && (
+                    <div className="pointer-events-none absolute inset-0 z-[1]">
+                        {/* Glow behind the hero */}
+                        <motion.div
+                            animate={{ opacity: hovered ? 0.5 : 0.2, scale: hovered ? 1.1 : 1 }}
+                            transition={{ duration: 0.5 }}
+                            className="absolute rounded-full blur-3xl"
+                            style={{
+                                width: 120, height: 120,
+                                right: '5%', bottom: '10%',
+                                background: `radial-gradient(circle, ${hero.glowColor}40, transparent)`
+                            }}
+                        />
+                        {/* The hero image */}
+                        <motion.div
+                            animate={{ opacity: hovered ? 0.55 : 0.25, scale: hovered ? 1.05 : 1 }}
+                            transition={{ duration: 0.5 }}
+                            className="absolute"
+                            style={{
+                                right: -10, bottom: -15,
+                                width: '55%', height: '110%',
+                            }}>
+                            <Image
+                                src={hero.src}
+                                alt=""
+                                fill
+                                className="object-contain object-bottom"
+                                style={{
+                                    maskImage: 'linear-gradient(to left, rgba(0,0,0,0.7) 20%, transparent 95%)',
+                                    WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.7) 20%, transparent 95%)',
+                                }}
+                                sizes="200px"
+                            />
+                        </motion.div>
+                    </div>
+                )}
+                <div className="relative z-10 flex items-start justify-between gap-2 mb-3">
+                    <div>
+                        <div className="inline-block font-outfit text-[7px] md:text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full mb-2"
+                            style={{ background: tool.light, color: tool.color }}>{tool.category}</div>
+                        <div className="flex items-center gap-2">
+                            <div style={{ color: tool.color }}>{getIcon()}</div>
+                            <h5 className="font-syne text-base md:text-xl font-bold leading-none text-[var(--foreground)]">{tool.name}</h5>
+                        </div>
+                    </div>
+                    <div className="relative flex-shrink-0 mt-1">
+                        <div className="w-3 h-3 rounded-full" style={{ background: tool.dot }} />
+                        <motion.div animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+                            transition={{ duration: 2.5, repeat: Infinity, delay: index * 0.4 }}
+                            className="absolute inset-0 rounded-full" style={{ background: tool.dot }} />
+                    </div>
+                </div>
+                <div className="relative z-10 mb-3">
+                    <div className="flex justify-between items-center mb-1.5">
+                        <span className="font-outfit text-[8px] font-black uppercase tracking-widest text-[var(--foreground)]/50">Penggunaan</span>
+                        <span className="font-syne text-xs font-bold" style={{ color: tool.color }}>{tool.usage}%</span>
+                    </div>
+                    <div className="h-1 w-full rounded-full bg-[var(--foreground)]/10 overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={inView ? { width: `${tool.usage}%` } : {}}
+                            transition={{ duration: 1.2, delay: index * 0.15 + 0.3, ease: "circOut" }}
+                            className="h-full rounded-full" style={{ background: `linear-gradient(to right, ${tool.color}, ${tool.dot})` }} />
+                    </div>
+                </div>
+                <p className="hidden md:block relative z-10 font-outfit text-[11px] text-[var(--foreground)]/60 leading-relaxed mb-3">{tool.desc}</p>
+                <div className="relative z-10 flex flex-wrap gap-1.5">
+                    {tool.tasks.map(task => (
+                        <span key={task} className="font-outfit text-[7px] md:text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                            style={{ background: tool.light, color: tool.color }}>{task}</span>
+                    ))}
+                </div>
+                <motion.div animate={{ width: hovered ? "100%" : "0%", opacity: hovered ? 0.4 : 0 }} transition={{ duration: 0.5 }}
+                    className="absolute bottom-0 left-0 h-[2px] rounded-bl-3xl" style={{ background: tool.color }} />
+            </motion.div>
+            <div className={`hidden md:block absolute top-1/2 -translate-y-1/2 h-px w-6 pointer-events-none opacity-30 ${side === "left" ? "-right-6" : "-left-6"}`}
+                style={{ background: tool.color }} />
+        </motion.div>
+    );
+}
+
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+// PALETTE 3D CANVAS
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+function PaletteCanvas({ activeThemeId, onColorClick, isActive }: { activeThemeId: string; onColorClick: (id: string) => void; isActive: boolean }) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const animRef = useRef<number | null>(null);
+    const activeThemeIdRef = useRef(activeThemeId);
+    const isActiveRef = useRef(isActive);
+    const threeRef = useRef<any>(null);
+    // Drag state for 360 rotation
+    const dragRef = useRef({ isDragging: false, prevX: 0, prevY: 0, rotY: 0.3, rotX: -0.4, velocityY: 0, velocityX: 0 });
+    const onColorClickRef = useRef(onColorClick);
+
+    useEffect(() => { activeThemeIdRef.current = activeThemeId; }, [activeThemeId]);
+    useEffect(() => { onColorClickRef.current = onColorClick; }, [onColorClick]);
+    useEffect(() => {
+        isActiveRef.current = isActive;
+        if (isActive && canvasRef.current && (canvasRef.current as any)._startAnim) {
+            (canvasRef.current as any)._startAnim();
+        }
+    }, [isActive]);
+
+    const handleClick = useCallback((e: MouseEvent) => {
+        const canvas = canvasRef.current;
+        const r = threeRef.current;
+        if (!canvas || !r) return;
+        // Only fire click if we weren't dragging
+        if (Math.abs(dragRef.current.velocityY) > 0.002 || Math.abs(dragRef.current.velocityX) > 0.002) return;
+        const { THREE, camera, scene } = r;
+        const rect = canvas.getBoundingClientRect();
+        const mouse = new THREE.Vector2(
+            ((e.clientX - rect.left) / rect.width) * 2 - 1,
+            -((e.clientY - rect.top) / rect.height) * 2 + 1
+        );
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(scene.children, true);
+        if (hits.length > 0) {
+            // Check if we hit a stone hitbox on the model first
+            const stoneHit = hits.find((h: any) => h.object.userData && h.object.userData.isStoneHitbox);
+            if (stoneHit) {
+                onColorClickRef.current(stoneHit.object.userData.themeId);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        let destroyed = false;
+        let isVisible = false;
+        const isVisibleRef = { current: false };
+        const observer = new IntersectionObserver(([entry]) => {
+            isVisible = entry.isIntersecting;
+            isVisibleRef.current = isVisible;
+            if (isVisible && isActiveRef.current && canvasRef.current && (canvasRef.current as any)._startAnim) {
+                (canvasRef.current as any)._startAnim();
+            }
+        }, { threshold: 0.05 });
+        observer.observe(canvas);
+
+        const load = async () => {
+            // @ts-ignore
+            const THREE = await import("three");
+            if (destroyed) return;
+
+            const isMobile = window.innerWidth < 768;
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, alpha: true, powerPreference: "high-performance" });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1 : 1.5));
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setClearColor(0x000000, 0);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+
+            // Enable PBR sRGB Color Space Encoding
+            if ("SRGBColorSpace" in THREE) {
+                renderer.outputColorSpace = (THREE as any).SRGBColorSpace;
+            }
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(36, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+            camera.position.set(0, 0, 8.5);
+            camera.lookAt(0, 0, 0);
+
+            // Studio PBR lighting setup
+            scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+            const key = new THREE.DirectionalLight(0xffffff, 3.5); key.position.set(5, 8, 6); scene.add(key);
+            const fill = new THREE.DirectionalLight(0xffffff, 1.5); fill.position.set(-5, 2, 4); scene.add(fill);
+            const back = new THREE.DirectionalLight(0xffffff, 1.0); back.position.set(0, -5, -4); scene.add(back);
+            const point = new THREE.PointLight(0xffffff, 2.0, 20); point.position.set(0, 2, 6); scene.add(point);
+
+            const paletteGroup = new THREE.Group();
+
+            // Î“Ã¶Ã‡Î“Ã¶Ã‡ TECH CORE BODY (Infinity Gauntlet GLB) Î“Ã¶Ã‡Î“Ã¶Ã‡
+            const coreGrp = new THREE.Group();
+            paletteGroup.add(coreGrp);
+
+            // Dynamically import GLTFLoader
+            // @ts-ignore
+            import("three/examples/jsm/loaders/GLTFLoader.js").then(({ GLTFLoader }) => {
+                const loader = new GLTFLoader();
+                loader.load('/models/ultro_pbr.glb', (gltf: any) => {
+                    const gauntlet = gltf.scene;
+
+                    // Normalize scale to fit the scene perfectly
+                    const box = new THREE.Box3().setFromObject(gauntlet);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+
+                    // Increase size dramatically to zoom in (Half-body shot)
+                    const desiredSize = 17.0;
+                    gauntlet.scale.setScalar(desiredSize / maxDim);
+
+                    // Re-calculate box after scaling to center it exactly at (0,0,0)
+                    const scaledBox = new THREE.Box3().setFromObject(gauntlet);
+                    const center = scaledBox.getCenter(new THREE.Vector3());
+                    gauntlet.position.sub(center);
+
+                    // Shift the model DOWN so the legs are hidden and chest/head is centered
+                    gauntlet.position.y -= 6.0;
+
+                    // Preserve native PBR materials & textures
+                    gauntlet.traverse((child: any) => {
+                        if (child.isMesh && child.material) {
+                            child.material.needsUpdate = true;
+                            if (child.material.map && THREE.SRGBColorSpace) {
+                                child.material.map.colorSpace = THREE.SRGBColorSpace;
+                            }
+                        }
+                    });
+
+                    // Add invisible hitboxes for the infinity stones
+                    const hitGeo = new THREE.SphereGeometry(0.08, 8, 8); // small sphere
+                    const hitMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0 }); // completely invisible
+
+                    const stoneData = [
+                        { id: "gold", pos: { x: 0.003, y: 2.046, z: 0.108 } },
+                        { id: "emerald", pos: { x: 0.005, y: 1.555, z: 0.208 } },
+                        { id: "ruby", pos: { x: -0.041, y: 1.696, z: 0.176 } },
+                        { id: "sapphire", pos: { x: 0.108, y: 1.673, z: 0.179 } },
+                        { id: "alexandrite", pos: { x: -0.096, y: 1.679, z: 0.178 } },
+                        { id: "amethyst", pos: { x: 0.053, y: 1.696, z: 0.176 } }
+                    ];
+
+                    stoneData.forEach(sd => {
+                        const mesh = new THREE.Mesh(hitGeo, hitMat);
+                        mesh.position.set(sd.pos.x, sd.pos.y, sd.pos.z);
+                        mesh.userData = { themeId: sd.id, isStoneHitbox: true };
+                        gauntlet.add(mesh);
+                    });
+
+                    // Expose to window for our temporary coordinate picker
+                    // @ts-ignore
+                    window.debugGauntlet = gauntlet;
+
+                    // Wrap in another group to apply rotation properly
+                    const wrapper = new THREE.Group();
+                    wrapper.add(gauntlet);
+                    coreGrp.add(wrapper);
+                }, undefined, (error: any) => {
+                    console.error("Error loading GLB model:", error);
+                });
+            });
+
+            // Î“Ã¶Ã‡Î“Ã¶Ã‡ SATELLITE NODES REMOVED Î“Ã¶Ã‡Î“Ã¶Ã‡
+            // The floating crystals are replaced by the chest stones on the Infinity Ultron model.
+            const paintMeshes: any[] = [];
+
+            // Î“Ã¶Ã‡Î“Ã¶Ã‡ Scale & position Î“Ã¶Ã‡Î“Ã¶Ã‡
+            paletteGroup.scale.setScalar(0.75);
+            scene.add(paletteGroup);
+
+            // Apply initial rotation from dragRef
+            paletteGroup.rotation.y = dragRef.current.rotY;
+            paletteGroup.rotation.x = dragRef.current.rotX;
+
+            threeRef.current = { THREE, camera, scene, renderer };
+
+            // Î“Ã¶Ã‡Î“Ã¶Ã‡ ANIMATION LOOP Î“Ã¶Ã‡Î“Ã¶Ã‡
+            const pIsAnimatingRef = { current: false };
+            (canvas as any)._startAnim = () => {
+                if (!pIsAnimatingRef.current) animate();
+            };
+
+            let t = 0;
+            const animate = () => {
+                if (destroyed) return;
+
+                if (!isVisibleRef.current || !isActiveRef.current) {
+                    pIsAnimatingRef.current = false;
+                    return;
+                }
+
+                pIsAnimatingRef.current = true;
+                animRef.current = requestAnimationFrame(animate);
+
+                t += 0.008;
+
+                const dr = dragRef.current;
+
+                if (!dr.isDragging) {
+                    // Apply inertia when not dragging
+                    dr.velocityY *= 0.95;
+                    dr.velocityX *= 0.95;
+                    dr.rotY += dr.velocityY;
+                    dr.rotX += dr.velocityX;
+                    // Clamp vertical rotation to avoid flipping
+                    dr.rotX = Math.max(-1.2, Math.min(0.6, dr.rotX));
+                    // Add subtle idle float
+                    paletteGroup.rotation.y = dr.rotY + Math.sin(t * 0.25) * 0.02;
+                    paletteGroup.rotation.x = dr.rotX + Math.cos(t * 0.2) * 0.01;
+                } else {
+                    paletteGroup.rotation.y = dr.rotY;
+                    paletteGroup.rotation.x = dr.rotX;
+                }
+
+                // Active node animations removed
+
+                renderer.render(scene, camera);
+            };
+            animate();
+
+            // Î“Ã¶Ã‡Î“Ã¶Ã‡ DRAG TO ROTATE (mouse + touch) Î“Ã¶Ã‡Î“Ã¶Ã‡
+            const onPointerDown = (e: PointerEvent) => {
+                dragRef.current.isDragging = true;
+                dragRef.current.prevX = e.clientX;
+                dragRef.current.prevY = e.clientY;
+                dragRef.current.velocityY = 0;
+                dragRef.current.velocityX = 0;
+                canvas.setPointerCapture(e.pointerId);
+            };
+            const onPointerMove = (e: PointerEvent) => {
+                const dr = dragRef.current;
+                if (!dr.isDragging) return;
+                const dx = e.clientX - dr.prevX;
+                const dy = e.clientY - dr.prevY;
+                dr.velocityY = dx * 0.008;
+                dr.velocityX = dy * 0.005;
+                dr.rotY += dr.velocityY;
+                dr.rotX += dr.velocityX;
+                dr.rotX = Math.max(-1.2, Math.min(0.6, dr.rotX));
+                dr.prevX = e.clientX;
+                dr.prevY = e.clientY;
+            };
+            const onPointerUp = (e: PointerEvent) => {
+                dragRef.current.isDragging = false;
+                canvas.releasePointerCapture(e.pointerId);
+            };
+            canvas.addEventListener("pointerdown", onPointerDown);
+            canvas.addEventListener("pointermove", onPointerMove);
+            canvas.addEventListener("pointerup", onPointerUp);
+            canvas.addEventListener("pointercancel", onPointerUp);
+
+            // Resize
+            const ro = new ResizeObserver(() => {
+                if (!canvas || destroyed) return;
+                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                camera.updateProjectionMatrix();
+            });
+            ro.observe(canvas);
+
+            // Store cleanup functions on the canvas object for the useEffect return
+            (canvas as any)._cleanup = () => {
+                canvas.removeEventListener("pointerdown", onPointerDown);
+                canvas.removeEventListener("pointermove", onPointerMove);
+                canvas.removeEventListener("pointerup", onPointerUp);
+                canvas.removeEventListener("pointercancel", onPointerUp);
+                ro.disconnect();
+            };
+        };
+
+        load();
+        canvas.addEventListener("click", handleClick);
+
+        return () => {
+            destroyed = true;
+            observer.disconnect();
+            if (animRef.current) cancelAnimationFrame(animRef.current);
+            canvas.removeEventListener("click", handleClick);
+            if ((canvas as any)._cleanup) (canvas as any)._cleanup();
+
+            // Clean up 3D memory to optimize performance
+            if (threeRef.current) {
+                const { scene, renderer } = threeRef.current as any;
+                if (scene) {
+                    scene.traverse((obj: any) => {
+                        if (obj.isMesh) {
+                            if (obj.geometry) obj.geometry.dispose();
+                            if (obj.material) {
+                                if (Array.isArray(obj.material)) {
+                                    obj.material.forEach((m: any) => m.dispose());
+                                } else {
+                                    obj.material.dispose();
+                                }
+                            }
+                        }
+                    });
+                }
+                if (renderer) renderer.dispose();
+            }
+        };
+    }, [handleClick]);
+
+    return <canvas ref={canvasRef} className="w-full h-full cursor-grab active:cursor-grabbing" style={{ display: "block", touchAction: "none" }} />;
+}
+
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+// PALETTE TAB
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+export function PaletteTab({ activeThemeId, onThemeChange, isActive }: { activeThemeId: string; onThemeChange: (id: string) => void; isActive: boolean }) {
+    const activeTheme = themeColors.find(t => t.id === activeThemeId) || themeColors[0];
+    return (
+        <div className="relative flex flex-col md:flex-row gap-8 md:gap-12 items-center min-h-[480px] md:min-h-[520px] overflow-visible rounded-3xl">
+            
+            {/* Large Masked Thanos Background */}
+            <div className="pointer-events-none absolute inset-0 z-0 flex items-start justify-end overflow-visible opacity-25 md:opacity-35 select-none">
+                {/* Glow behind Thanos */}
+                <div 
+                    className="absolute right-[5%] top-[10%] w-[350px] h-[350px] rounded-full blur-3xl transition-colors duration-700" 
+                    style={{ background: `${activeTheme.primary}30` }} 
+                />
+                
+                {/* Thanos PNG with gradient mask */}
+                <div className="relative w-[340px] sm:w-[460px] md:w-[580px] h-[340px] sm:h-[460px] md:h-[580px] -right-10 md:right-0 -top-10 md:-top-20">
+                    <Image
+                        src="/images/characters/THANOS.png"
+                        alt="Thanos"
+                        fill
+                        className="object-contain object-top-right"
+                        style={{
+                            maskImage: 'radial-gradient(circle at 60% 40%, rgba(0,0,0,0.85) 30%, transparent 75%)',
+                            WebkitMaskImage: 'radial-gradient(circle at 60% 40%, rgba(0,0,0,0.85) 30%, transparent 75%)',
+                            filter: `drop-shadow(0 0 20px ${activeTheme.primary}40)`
+                        }}
+                        sizes="580px"
+                        priority
+                    />
+                </div>
+            </div>
+
+            {/* 3D Palette */}
+            <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className="relative z-10 w-full md:w-[52%] flex-shrink-0" style={{ height: "clamp(280px, 42vw, 460px)" }}>
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <motion.div animate={{ opacity: 1 }} className="w-full h-full rounded-3xl transition-all duration-700"
+                        style={{ background: `radial-gradient(ellipse at center, ${activeTheme.dot}18 0%, transparent 70%)` }} />
+                </div>
+                <PaletteCanvas activeThemeId={activeThemeId} onColorClick={onThemeChange} isActive={isActive} />
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/75 backdrop-blur-sm border border-purple-100 pointer-events-none whitespace-nowrap">
+                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: activeTheme.primary }} />
+                    <span className="font-outfit text-[8px] font-black uppercase tracking-widest" style={{ color: activeTheme.primary }}>
+                        Ketuk Infinity stonenya untuk mengubah tema
+
+                    </span>
+                </div>
+            </motion.div>
+
+            {/* Right: info + swatches */}
+            <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.1 }}
+                className="relative z-10 flex-1 flex flex-col gap-6 w-full">
+                {/* Active theme */}
+                <AnimatePresence mode="wait">
+                    <motion.div key={activeThemeId} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.4 }}>
+                        <div className="font-outfit text-[9px] font-black uppercase tracking-[0.5em] mb-2 transition-colors duration-500"
+                            style={{ color: activeTheme.primary }}>Tema Aktif</div>
+                        <h3 className="font-syne text-3xl md:text-4xl font-bold text-[var(--foreground)] leading-none mb-2">
+                            {activeTheme.name}
+                            <span className="ml-3 font-outfit text-sm font-medium opacity-30">#{activeTheme.label}</span>
+                        </h3>
+                        <div className="flex items-center gap-3 mt-3">
+                            <div className="w-9 h-9 rounded-xl border border-white/50 relative overflow-hidden flex-shrink-0 shadow-lg"
+                                style={{
+                                    background: `radial-gradient(circle at 30% 25%, ${activeTheme.dot} 0%, ${activeTheme.primary} 75%)`,
+                                    boxShadow: `0 4px 15px -2px ${activeTheme.primary}77, inset 0 2px 4px rgba(255,255,255,0.85), inset 0 -2px 5px rgba(0,0,0,0.5)`
+                                }}>
+                                <div className="absolute -top-1 -left-1 w-2/3 h-1/2 bg-gradient-to-br from-white/70 via-white/20 to-transparent rounded-br-full -rotate-12 pointer-events-none" />
+                            </div>
+                            <div className="w-6 h-6 rounded-lg border border-white/40 relative overflow-hidden shadow"
+                                style={{
+                                    background: activeTheme.dot,
+                                    boxShadow: `inset 0 1px 3px rgba(255,255,255,0.8), inset 0 -1px 3px rgba(0,0,0,0.3)`
+                                }}>
+                                <div className="absolute -top-0.5 -left-0.5 w-2/3 h-1/2 bg-gradient-to-br from-white/60 to-transparent rounded-br-full pointer-events-none" />
+                            </div>
+                            <div className="w-5 h-5 rounded-lg border border-black/10 shadow-sm" style={{ background: activeTheme.light }} />
+                            <span className="font-outfit text-xs text-[var(--foreground)]/40 font-mono ml-1">{activeTheme.primary}</span>
+                        </div>
+                    </motion.div>
+                </AnimatePresence>
+
+                {/* Swatches */}
+                <div>
+                    <div className="font-outfit text-[9px] font-black uppercase tracking-[0.4em] text-[var(--foreground)]/30 mb-4">Skema Visual</div>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 md:gap-3">
+                        {themeColors.map(tc => (
+                            <motion.button key={tc.id} onClick={() => onThemeChange(tc.id)}
+                                whileHover={{ y: -4, scale: 1.06 }} whileTap={{ scale: 0.94 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                                className="relative flex flex-col items-center gap-2 group">
+
+                                {/* Loki sitting on top of Time Stone (Emerald) */}
+                                {tc.id === "emerald" && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.6, delay: 0.2 }}
+                                        className="absolute z-20 pointer-events-none"
+                                        style={{
+                                            top: -40,
+                                            left: '10%',
+                                            transform: 'translateX(-50%)',
+                                            width: 65,
+                                            height: 65,
+                                        }}>
+                                        <Image
+                                            src="/images/characters/LOKI.png"
+                                            alt="Loki"
+                                            fill
+                                            className="object-contain"
+                                            style={{
+                                                filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.6))',
+                                            }}
+                                            sizes="65px"
+                                        />
+                                    </motion.div>
+                                )}
+
+                                {/* Red Skull grasping Space Stone (Sapphire) */}
+                                {tc.id === "sapphire" && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.6, delay: 0.2 }}
+                                        className="absolute z-0 pointer-events-none"
+                                        style={{
+                                            top: 40,
+                                            left: 15,
+                                            width: 120,
+                                            height: 130,
+                                        }}>
+                                        <Image
+                                            src="/images/characters/RED SKULL.png"
+                                            alt="Red Skull"
+                                            fill
+                                            className="object-contain"
+                                            style={{
+                                                filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7))',
+                                            }}
+                                            sizes="300px"
+                                        />
+                                    </motion.div>
+                                )}
+
+                                <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-2xl transition-all duration-300 overflow-hidden border"
+                                    style={{
+                                        background: `radial-gradient(circle at 30% 25%, ${tc.dot} 0%, ${tc.primary} 70%, ${tc.primary}DD 100%)`,
+                                        borderColor: tc.id === activeThemeId ? "rgba(255, 255, 255, 0.95)" : "rgba(255, 255, 255, 0.35)",
+                                        boxShadow: tc.id === activeThemeId
+                                            ? `0 10px 25px -3px ${tc.primary}99, inset 0 2px 5px rgba(255,255,255,0.9), inset 0 -3px 6px rgba(0,0,0,0.55)`
+                                            : `0 4px 12px -2px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.7), inset 0 -2px 5px rgba(0,0,0,0.45)`,
+                                    }}>
+                                    {/* 3D Specular Cabochon Glass Highlight (Zero CPU Overhead) */}
+                                    <div className="absolute -top-1 -left-1 w-2/3 h-1/2 bg-gradient-to-br from-white/75 via-white/25 to-transparent rounded-br-full -rotate-12 pointer-events-none transition-transform duration-300 group-hover:scale-110 group-hover:brightness-110" />
+
+                                    {/* Internal Refraction Glow */}
+                                    <div className="absolute bottom-0 inset-x-2 h-2 rounded-t-full opacity-50 pointer-events-none"
+                                        style={{ background: `radial-gradient(ellipse at center, ${tc.light}, transparent)` }} />
+
+                                    {tc.id === activeThemeId && (
+                                        <div className="absolute inset-0 z-10 flex items-center justify-center">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_6px_rgba(0,0,0,0.7)] ring-2 ring-white/60" />
+                                        </div>
+                                    )}
+                                </div>
+                                <span className="font-outfit text-[8px] font-bold text-center text-[var(--foreground)]/50 group-hover:text-[var(--foreground)]/80 transition-colors">{tc.name}</span>
+                            </motion.button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Preview strip */}
+                <AnimatePresence mode="wait">
+                    <motion.div key={`prev-${activeThemeId}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        transition={{ duration: 0.4, delay: 0.1 }} className="relative z-10 rounded-2xl overflow-hidden border"
+                        style={{ borderColor: `${activeTheme.primary}25` }}>
+                        <div className="p-4" style={{ background: activeTheme.light }}>
+                            <div className="font-outfit text-[9px] font-black uppercase tracking-widest mb-2" style={{ color: activeTheme.primary }}>Pratinjau</div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: activeTheme.primary }}>
+                                    <Hexagon size={14} color="white" />
+                                </div>
+                                <div>
+                                    <div className="font-syne font-bold text-sm" style={{ color: activeTheme.primary }}>Tema {activeTheme.name}</div>
+                                    <div className="font-outfit text-[10px]" style={{ color: `${activeTheme.primary}80` }}>{activeTheme.label}</div>
+                                </div>
+                                <div className="ml-auto px-3 py-1 rounded-full font-outfit text-[8px] font-black uppercase tracking-widest text-white"
+                                    style={{ background: activeTheme.primary }}>Aktif</div>
+                            </div>
+                        </div>
+                    </motion.div>
+                </AnimatePresence>
+            </motion.div>
+        </div>
+    );
+}
+
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+// TAB SWITCHER
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+function TabSwitcher({ activeTab, onTabChange, theme }: {
+    activeTab: 0 | 1; onTabChange: (tab: 0 | 1) => void; theme: typeof themeColors[0];
+}) {
+    return (
+        <div className="relative flex items-center gap-1 p-1 rounded-2xl border w-fit"
+            style={{ background: theme.light, borderColor: `${theme.primary}20` }}>
+            <motion.div layoutId="tab-indicator" className="absolute rounded-xl inset-y-1 transition-colors duration-500"
+                style={{ background: theme.primary, width: "calc(50% - 4px)", left: activeTab === 0 ? "4px" : "calc(50%)" }}
+                transition={{ type: "spring", stiffness: 420, damping: 36 }} />
+            {[{ icon: <Wrench size={12} />, label: "Peralatan & Kit" }, { icon: <Hexagon size={12} />, label: "Skema Visual" }].map((tab, i) => (
+                <button key={i} onClick={() => onTabChange(i as 0 | 1)}
+                    className="relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl font-outfit text-[10px] font-black uppercase tracking-widest transition-colors duration-300"
+                    style={{ color: activeTab === i ? "white" : `${theme.primary}80` }}>
+                    {tab.icon}{tab.label}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+// METHODOLOGY GRID
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+const methodology = [
+    { step: "01", title: "Analisis Data", desc: "Memahami masalah, mengumpulkan kebutuhan, dan memproses data mentah." },
+    { step: "02", title: "Bangun Logika", desc: "Menerjemahkan struktur data ke dalam sistem yang tangguh dan logika aplikasi." },
+    { step: "03", title: "Deploy & Skalabilitas", desc: "Memastikan keandalan tinggi, pengujian, dan penerapan ke lingkungan produksi." },
+];
+
+function MethodologyGrid({ theme }: { theme: typeof themeColors[0] }) {
+    return (
+        <div className="methodology-trigger mt-8 md:mt-16">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "0px" }}
+                className="flex items-center gap-6 mb-10 md:mb-14">
+                <h3 className="font-syne text-2xl md:text-4xl font-bold text-[var(--foreground)] tracking-tight flex-shrink-0">Metodologi</h3>
+                <div className="h-px flex-1" style={{ background: `linear-gradient(to right, ${theme.primary}40, transparent)` }} />
+                <span className="font-outfit text-[9px] font-black uppercase tracking-[0.4em] text-[var(--foreground)]/30 hidden sm:inline flex-shrink-0">Alur Kerja</span>
+            </motion.div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+                {methodology.map((item, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "0px" }}
+                        transition={{ duration: 0.8, delay: i * 0.13, ease: [0.22, 1, 0.36, 1] }}
+                        className="methodology-card-morph group relative overflow-hidden rounded-3xl bg-[var(--foreground)]/5 backdrop-blur-sm border p-7 md:p-10 hover:bg-[var(--foreground)]/10 hover:shadow-xl transition-all duration-500"
+                        style={{ borderColor: `${theme.primary}20` }}
+                        onMouseEnter={(e: React.MouseEvent<HTMLElement>) => (e.currentTarget.style.borderColor = `${theme.primary}50`)}
+                        onMouseLeave={(e: React.MouseEvent<HTMLElement>) => (e.currentTarget.style.borderColor = `${theme.primary}20`)}>
+                        <div className="absolute -top-6 -right-4 font-syne text-[100px] md:text-[120px] font-black select-none leading-none pointer-events-none"
+                            style={{ color: `${theme.primary}07` }}>{item.step}</div>
+                        <div className="relative z-10 space-y-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center font-syne font-black text-xs transition-all duration-300 group-hover:text-white group-hover:border-current"
+                                    style={{ borderColor: `${theme.primary}50`, color: theme.primary }}
+                                    onMouseEnter={(e: React.MouseEvent<HTMLElement>) => { const el = e.currentTarget; el.style.background = theme.primary; }}
+                                    onMouseLeave={(e: React.MouseEvent<HTMLElement>) => { const el = e.currentTarget; el.style.background = "transparent"; }}>
+                                    {item.step}
+                                </div>
+                                <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, ${theme.primary}40, transparent)` }} />
+                            </div>
+                            <h5 className="font-syne text-lg md:text-2xl font-bold text-[var(--foreground)] transition-colors duration-300" style={{}}>{item.title}</h5>
+                            <p className="font-outfit text-sm text-[var(--foreground)]/60 leading-relaxed font-medium">{item.desc}</p>
+                        </div>
+                        <div className="absolute bottom-0 left-0 h-[2px] w-0 group-hover:w-full transition-all duration-700 rounded-b-3xl"
+                            style={{ background: theme.primary }} />
+                    </motion.div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+// MAIN EXPORT
+// Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡Î“Ã¶Ã‡
+export function SkillsSection({
+    onThemeChange,
+    activeThemeId = "gold",
+}: {
+    onThemeChange?: (themeId: string) => void;
+    activeThemeId?: string;
+}) {
+    const [activeTab, setActiveTab] = useState<0 | 1>(0);
+
+    const sectionRef = useRef<HTMLElement>(null);
+    const brushBoxMobileRef = useRef<HTMLDivElement>(null);
+    const brushBoxDesktopRef = useRef<HTMLDivElement>(null);
+
+
+
+    const theme = themeColors.find(t => t.id === activeThemeId) || themeColors[0];
+    const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
+    const watermarkX = useTransform(scrollYProgress, [0, 1], ["3%", "-3%"]);
+    const leftTools = tools.filter(t => t.side === "left");
+    const rightTools = tools.filter(t => t.side === "right");
+
+    return (
+        <section ref={sectionRef} id="skills-section"
+            className="relative select-none bg-[var(--background)] rounded-t-3xl md:rounded-t-[40px] border-t border-[var(--foreground)]/10 z-30">
+            {/* Simulated shadow for better performance than CSS box-shadow blur over WebGL */}
+            <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-0" />
+
+            <div className="relative z-10 w-full h-full py-20 md:py-40 px-4 md:px-12">
+
+                {/* Background cleared (removed extra layer) */}
+
+                {/* Parallax watermark - we can still keep this small parallax */}
+                <motion.div style={{ x: watermarkX }} className="pointer-events-none absolute -top-8 -right-16 select-none" aria-hidden>
+                    <div className="font-syne text-[22vw] md:text-[18vw] font-black leading-none uppercase transition-colors duration-700"
+                        style={{ color: `${theme.primary}05` }}>Indeks</div>
+                </motion.div>
+
+                <div className="relative z-20 pointer-events-none">
+                    <div className="container mx-auto max-w-7xl relative pointer-events-auto">
+
+                        {/* Header */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10 md:mb-20 items-end">
+                            <div className="lg:col-span-7 space-y-5">
+
+                                <div className="overflow-hidden">
+                                    <h2 className="font-syne font-bold text-[var(--foreground)] leading-[0.9] tracking-tighter">
+                                        <SplitReveal text="Tech Stack," className="text-4xl md:text-7xl block" delay={0} />
+                                        <span className="block overflow-hidden">
+                                            <SplitReveal text="& Sistem." className="text-4xl md:text-7xl transition-colors duration-500" delay={0.18} />
+                                        </span>
+                                    </h2>
+                                </div>
+                            </div>
+                            <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "0px" }} transition={{ delay: 0.3 }}
+                                className="lg:col-span-5 font-outfit text-sm md:text-lg text-[var(--foreground)]/50 leading-relaxed font-medium">
+                                Membangun solusi tangguh melalui kode yang bersih, analitik data terstruktur, dan arsitektur TI yang andal.
+                            </motion.p>
+                        </div>
+
+                        {/* Marquee */}
+                        <div className="mb-10 md:mb-16">
+                            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, margin: "0px" }}
+                                className="font-outfit text-[9px] font-black uppercase tracking-widest text-[var(--foreground)]/25 mb-4 pb-4 border-b transition-colors duration-500"
+                                style={{ borderColor: `${theme.primary}20` }}>Keahlian Inti</motion.div>
+                            <SkillMarquee skills={allSkills} theme={theme} />
+                        </div>
+
+                        {/* Tab switcher */}
+                        <div className="flex items-center justify-between mb-8 md:mb-12">
+                            <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} theme={theme} />
+                        </div>
+
+                        {/* Tab content */}
+                        <div className="relative">
+                            <motion.div
+                                initial={false}
+                                animate={{
+                                    opacity: activeTab === 0 ? 1 : 0,
+                                    x: activeTab === 0 ? 0 : -24
+                                }}
+                                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                                style={{
+                                    pointerEvents: activeTab === 0 ? 'auto' : 'none',
+                                    position: activeTab === 0 ? 'relative' : 'absolute',
+                                    visibility: activeTab === 0 ? 'visible' : 'hidden',
+                                    top: 0, left: 0, right: 0, zIndex: activeTab === 0 ? 10 : 1
+                                }}>
+
+                                {/* MOBILE */}
+                                <div className="md:hidden flex flex-col gap-6 mb-16">
+                                    <motion.div ref={brushBoxMobileRef} initial={{ opacity: 0, scale: 0.92 }} whileInView={{ opacity: 1, scale: 1 }}
+                                        viewport={{ once: true, margin: "0px" }} transition={{ duration: 1 }}
+                                        className={`relative w-full rounded-3xl border bg-gradient-to-b to-white/10 flex flex-col items-center justify-center`}
+                                        style={{ height: 300, borderColor: `${theme.primary}25`, background: `linear-gradient(to bottom, ${theme.light}40, transparent)` }}>
+                                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                            <div className="w-36 h-36 rounded-full blur-3xl" style={{ background: `${theme.dot}20` }} />
+                                        </div>
+                                        
+                                        {/* Captain America Image (Mobile) */}
+                                        {/* KODE YANG MENGATUR UKURAN DAN POSISI GAMBAR ADA DI SINI */}
+                                        <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
+                                            <Image 
+                                                src="/images/characters/CAPTAIN.png" 
+                                                alt="Captain America" 
+                                                width={200}  // Lebar gambar (px)
+                                                height={250} // Tinggi gambar (px)
+                                                className="object-contain opacity-90 drop-shadow-lg"
+                                                // Ubah translateX/translateY untuk menggeser posisinya (contoh: 'translateY(-10px)')
+                                                style={{ transform: 'translateY(0px)' }} 
+                                            />
+                                        </div>
+                                        <div className="absolute z-10 pointer-events-none" style={{ top: -200, bottom: -200, left: -200, right: -200 }}>
+                                            {/* Shield wrapper passes pointer events through */}
+                                            <div className="w-full h-full pointer-events-none">
+                                                <CaptainAmericaShield isActive={activeTab === 0} themeColor={theme.primary} />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {tools.map((tool, i) => (
+                                            <ToolIndicator key={tool.id} tool={tool} index={i} side={tool.side as "left" | "right"} onHover={() => { }} theme={theme} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* DESKTOP */}
+                                <div className="hidden md:grid md:grid-cols-[1fr_auto_1fr] gap-6 lg:gap-10 items-center mb-24">
+                                    <div className="flex flex-col gap-5 justify-center">
+                                        {leftTools.map((tool, i) => <ToolIndicator key={tool.id} tool={tool} index={i} side="left" onHover={() => { }} theme={theme} />)}
+                                    </div>
+
+                                    <div className="relative flex items-center justify-center">
+                                        {/* Deadpool lying on top of the panel */}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            viewport={{ once: true }}
+                                            transition={{ duration: 1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                                            className="absolute z-20 pointer-events-none"
+                                            style={{
+                                                top: -82,
+                                                left: '-10%',
+                                                transform: 'translateX(-50%)',
+                                                width: 320,
+                                                height: 120,
+                                            }}>
+                                            <Image
+                                                src="/images/characters/deadpool.png"
+                                                alt="Deadpool"
+                                                fill
+                                                className="object-contain"
+                                                style={{
+                                                    filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.5))',
+                                                }}
+                                                sizes="320px"
+                                            />
+                                        </motion.div>
+                                        <motion.div ref={brushBoxDesktopRef} initial={{ opacity: 0, scale: 0.85 }} whileInView={{ opacity: 1, scale: 1 }}
+                                            viewport={{ once: true, margin: "0px" }} transition={{ duration: 1.2 }}
+                                            className={`relative rounded-[2.5rem] border transition-colors duration-500`}
+                                            style={{ width: 240, height: 520, borderColor: `${theme.primary}25`, background: `linear-gradient(180deg, ${theme.light}40, transparent)` }}>
+                                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                                <div className="w-40 h-40 rounded-full blur-3xl" style={{ background: `${theme.dot}18` }} />
+                                            <span className="font-outfit text-[8px] font-black uppercase tracking-[0.4em]" style={{ color: `${theme.primary}60` }}>Kit Standar</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-5 justify-center">
+                                        {rightTools.map((tool, i) => <ToolIndicator key={tool.id} tool={tool} index={i} side="right" onHover={() => { }} theme={theme} />)}
+                                    </div>
+                                </div>
+
+                                <MethodologyGrid theme={theme} />
+                            </motion.div>
+
+                            <motion.div
+                                initial={false}
+                                animate={{
+                                    opacity: activeTab === 1 ? 1 : 0,
+                                    x: activeTab === 1 ? 0 : 24
+                                }}
+                                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+                                style={{
+                                    pointerEvents: activeTab === 1 ? 'auto' : 'none',
+                                    position: activeTab === 1 ? 'relative' : 'absolute',
+                                    visibility: activeTab === 1 ? 'visible' : 'hidden',
+                                    top: 0, left: 0, right: 0, zIndex: activeTab === 1 ? 10 : 1
+                                }}>
+                                <PaletteTab activeThemeId={activeThemeId} onThemeChange={onThemeChange || (() => { })} isActive={activeTab === 1} />
+                            </motion.div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Fade out to black gradient at the very bottom to merge seamlessly with SlingRingPortal */}
+            <div className="absolute bottom-0 left-0 w-full h-[25vh] bg-gradient-to-b from-transparent to-[#000000] pointer-events-none z-20" />
+        </section>
+    );
+}
+
+export default SkillsSection;
