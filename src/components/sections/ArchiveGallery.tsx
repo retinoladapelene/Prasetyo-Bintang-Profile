@@ -393,21 +393,21 @@ export function ArchiveGallery() {
         
         // Force Lenis to scroll to exactly 1 panel away and lock user input
         lenis.scrollTo(targetScrollY, { 
-          duration: 3.5, // Diperlambat ekstra agar sangat gentle (dari 2.4 ke 3.5)
-          easing: (t: number) => 1 - Math.pow(1 - t, 4), // easeOutQuart: mulai sedikit cepat, meluncur sangat halus dan panjang di akhir
+          duration: 1.2, // Dipercepat agar scroll tidak terasa "terkunci" terlalu lama
+          easing: (t: number) => 1 - Math.pow(1 - t, 4), // easeOutQuart
           lock: true,
           onComplete: () => {
             // Unlock snap only after fully settled
             setTimeout(() => {
               isSnappingRef.current = false;
-            }, 100);
+            }, 50);
           }
         });
 
         // Safety unlock in case onComplete fails to fire (e.g., if already at target position)
         setTimeout(() => {
           isSnappingRef.current = false;
-        }, 2800);
+        }, 1300);
       };
 
       if (st) {
@@ -426,11 +426,11 @@ export function ArchiveGallery() {
             
             if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
             scrollTimeoutRef.current = setTimeout(() => {
-              // Hanya snap JIKA user sudah benar-benar BERHENTI scroll (setelah 800ms agar lebih rileks)
+              // Hanya snap JIKA user sudah benar-benar BERHENTI scroll (setelah 200ms agar lebih responsif)
               if (clampedActiveIndex >= 0) {
                 doSnap(clampedActiveIndex, false);
               }
-            }, 800);
+            }, 200);
           };
           
           lenis.on('scroll', handleScroll);
@@ -488,7 +488,7 @@ export function ArchiveGallery() {
                 if (clampedWallIndex >= 0) {
                   doSnap(clampedWallIndex, true);
                 }
-              }, 800);
+              }, 200);
             }
           };
           
@@ -598,7 +598,7 @@ export function ArchiveGallery() {
           >
             {/* Header Title removed as requested by user */}
 
-            <div className="absolute bottom-12 md:bottom-24 right-6 md:right-12 text-right mix-blend-difference">
+            <div className="hidden md:block absolute bottom-12 md:bottom-24 right-6 md:right-12 text-right mix-blend-difference">
               <p className="font-mono text-xs md:text-sm text-white/50 uppercase tracking-widest">
                 Scroll to explore
               </p>
@@ -606,7 +606,7 @@ export function ArchiveGallery() {
             </div>
 
             {/* Static UI for Active Project Description (Kiri Bawah - CAROUSEL PHASE) */}
-            <div className="absolute bottom-6 left-6 md:bottom-16 md:left-12 pointer-events-auto flex flex-col items-start w-[90%] md:w-[500px]">
+            <div className="absolute bottom-6 left-4 right-4 md:bottom-16 md:left-12 md:right-auto pointer-events-auto flex flex-col items-start w-auto md:w-[500px] sm:max-w-sm scale-95 sm:scale-100 origin-bottom-left z-10 p-4 md:p-0 rounded-xl md:rounded-none bg-black/70 md:bg-transparent border border-white/10 md:border-none shadow-2xl md:shadow-none">
               <AnimatePresence mode="popLayout">
                 <motion.div
                   key={activeItem.id}
@@ -615,7 +615,7 @@ export function ArchiveGallery() {
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.25, ease: "easeOut" }}
                   style={{ willChange: "transform, opacity" }}
-                  className="flex flex-col items-start"
+                  className="flex flex-col items-start w-full"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <span className="font-mono text-xs md:text-sm font-bold text-[var(--theme-primary)] drop-shadow-md">
@@ -627,34 +627,34 @@ export function ArchiveGallery() {
                     </span>
                   </div>
 
-                  <h3 className="font-syne text-2xl md:text-4xl font-bold text-white mb-2 uppercase tracking-tight leading-none drop-shadow-xl shadow-black">
+                  <h3 className="font-syne text-xl sm:text-2xl md:text-4xl font-bold text-white mb-2 uppercase tracking-tight leading-none drop-shadow-xl shadow-black">
                     {activeItem.title}
                   </h3>
 
-                  <p className="font-outfit text-xs md:text-sm text-white/80 leading-relaxed mb-4 max-w-lg drop-shadow-lg shadow-black line-clamp-3">
+                  <p className="font-outfit text-[11px] sm:text-xs md:text-sm text-white/80 leading-relaxed mb-4 max-w-lg drop-shadow-lg shadow-black line-clamp-3 md:line-clamp-none">
                     {activeItem.desc}
                   </p>
 
                   {/* Tech Stack */}
-                  <div className="flex flex-wrap justify-start gap-2 mb-5">
+                  <div className="flex flex-wrap justify-start gap-1.5 md:gap-2 mb-4 md:mb-5">
                     {activeItem.tech?.map((tech: string, i: number) => (
-                      <span key={i} className="font-mono text-[9px] md:text-[10px] text-white/90 bg-white/10 backdrop-blur-md px-2 py-1 uppercase tracking-widest rounded-sm border border-white/10 shadow-lg shadow-black/50">
+                      <span key={i} className="font-mono text-[8px] sm:text-[9px] md:text-[10px] text-white/90 bg-white/20 md:bg-white/10 md:backdrop-blur-md px-1.5 md:px-2 py-0.5 md:py-1 uppercase tracking-widest rounded-sm border border-white/10 shadow-lg shadow-black/50">
                         {tech}
                       </span>
                     ))}
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex flex-wrap justify-start gap-3">
+                  <div className="flex flex-wrap justify-start gap-2 md:gap-3">
                     {activeItem.demoLink && (
                       <a
                         href={activeItem.demoLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 font-mono text-[10px] md:text-xs font-bold bg-[var(--theme-primary)] text-white px-4 py-2 uppercase tracking-wider hover:bg-[var(--theme-primary)]/80 transition-colors rounded-sm shadow-xl shadow-black/50"
+                        className="flex items-center gap-1.5 md:gap-2 font-mono text-[9px] sm:text-[10px] md:text-xs font-bold bg-[var(--theme-primary)] text-white px-3 py-1.5 md:px-4 md:py-2 uppercase tracking-wider hover:bg-[var(--theme-primary)]/80 transition-colors rounded-sm shadow-xl shadow-black/50"
                       >
                         Play Demo
-                        <ArrowUpRight size={14} />
+                        <ArrowUpRight size={14} className="w-3 h-3 md:w-3.5 md:h-3.5" />
                       </a>
                     )}
                     {activeItem.sourceLink && (
@@ -662,10 +662,10 @@ export function ArchiveGallery() {
                         href={activeItem.sourceLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 font-mono text-[10px] md:text-xs font-bold bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2 uppercase tracking-wider hover:bg-white/20 transition-colors rounded-sm shadow-xl shadow-black/50"
+                        className="flex items-center gap-1.5 md:gap-2 font-mono text-[9px] sm:text-[10px] md:text-xs font-bold bg-white/20 md:bg-white/10 md:backdrop-blur-md border border-white/20 text-white px-3 py-1.5 md:px-4 md:py-2 uppercase tracking-wider hover:bg-white/30 transition-colors rounded-sm shadow-xl shadow-black/50"
                       >
                         Source
-                        <Terminal size={14} />
+                        <Terminal size={14} className="w-3 h-3 md:w-3.5 md:h-3.5" />
                       </a>
                     )}
                     {activeItem.apkLink && (
@@ -673,19 +673,19 @@ export function ArchiveGallery() {
                         href={activeItem.apkLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 font-mono text-[10px] md:text-xs font-bold bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2 uppercase tracking-wider hover:bg-white/20 transition-colors rounded-sm shadow-xl shadow-black/50"
+                        className="flex items-center gap-1.5 md:gap-2 font-mono text-[9px] sm:text-[10px] md:text-xs font-bold bg-white/20 md:bg-white/10 md:backdrop-blur-md border border-white/20 text-white px-3 py-1.5 md:px-4 md:py-2 uppercase tracking-wider hover:bg-white/30 transition-colors rounded-sm shadow-xl shadow-black/50"
                       >
                         Download APK
-                        <ArrowUpRight size={14} />
+                        <ArrowUpRight size={14} className="w-3 h-3 md:w-3.5 md:h-3.5" />
                       </a>
                     )}
                     {activeItem.embedLink && setSelectedEmbed && (
                       <button
                         onClick={() => setSelectedEmbed(activeItem.embedLink)}
-                        className="flex items-center gap-2 font-mono text-[10px] md:text-xs font-bold bg-[var(--theme-primary)] text-white px-4 py-2 uppercase tracking-wider hover:bg-[var(--theme-primary)]/80 transition-colors rounded-sm shadow-xl shadow-black/50"
+                        className="flex items-center gap-1.5 md:gap-2 font-mono text-[9px] sm:text-[10px] md:text-xs font-bold bg-[var(--theme-primary)] text-white px-3 py-1.5 md:px-4 md:py-2 uppercase tracking-wider hover:bg-[var(--theme-primary)]/80 transition-colors rounded-sm shadow-xl shadow-black/50"
                       >
                         Database
-                        <Database size={14} />
+                        <Database size={14} className="w-3 h-3 md:w-3.5 md:h-3.5" />
                       </button>
                     )}
                     {activeItem.sheetLink && (
@@ -693,10 +693,10 @@ export function ArchiveGallery() {
                         href={activeItem.sheetLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 font-mono text-[10px] md:text-xs font-bold bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2 uppercase tracking-wider hover:bg-white/20 transition-colors rounded-sm shadow-xl shadow-black/50"
+                        className="flex items-center gap-1.5 md:gap-2 font-mono text-[9px] sm:text-[10px] md:text-xs font-bold bg-white/20 md:bg-white/10 md:backdrop-blur-md border border-white/20 text-white px-3 py-1.5 md:px-4 md:py-2 uppercase tracking-wider hover:bg-white/30 transition-colors rounded-sm shadow-xl shadow-black/50"
                       >
                         Sheet
-                        <ArrowUpRight size={14} />
+                        <ArrowUpRight size={14} className="w-3 h-3 md:w-3.5 md:h-3.5" />
                       </a>
                     )}
                     {activeItem.dashboardLink && (
@@ -704,10 +704,10 @@ export function ArchiveGallery() {
                         href={activeItem.dashboardLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 font-mono text-[10px] md:text-xs font-bold bg-[var(--theme-primary)] text-white px-4 py-2 uppercase tracking-wider hover:bg-[var(--theme-primary)]/80 transition-colors rounded-sm shadow-xl shadow-black/50"
+                        className="flex items-center gap-1.5 md:gap-2 font-mono text-[9px] sm:text-[10px] md:text-xs font-bold bg-[var(--theme-primary)] text-white px-3 py-1.5 md:px-4 md:py-2 uppercase tracking-wider hover:bg-[var(--theme-primary)]/80 transition-colors rounded-sm shadow-xl shadow-black/50"
                       >
                         Dashboard
-                        <BarChart size={14} />
+                        <BarChart size={14} className="w-3 h-3 md:w-3.5 md:h-3.5" />
                       </a>
                     )}
                   </div>

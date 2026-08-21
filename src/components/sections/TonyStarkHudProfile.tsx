@@ -494,10 +494,10 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
             enterRange={[0.175, 0.190]}
             exitRange={[0.278, 0.292]}
             fromY={-35}
-            className="absolute right-20 top-6 z-30 md:right-24 lg:right-28 lg:top-8"
+            className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6 lg:right-28 lg:top-8 pointer-events-none"
           >
           <Panel3D mouseX={mx} mouseY={my} depth={0.32} className="flex items-center gap-3">
-            <div className="flex items-center gap-4 rounded-full border border-[var(--foreground)]/20 bg-[var(--background)]/70 px-4 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[var(--foreground)] drop-shadow-[0_0_10px_rgb(var(--theme-primary-rgb)/0.4)] backdrop-blur-md">
+            <div className="flex items-center gap-2 sm:gap-4 rounded-full border border-[var(--foreground)]/20 bg-[var(--background)]/70 px-3 py-1 sm:px-4 sm:py-1.5 text-[8px] sm:text-[10px] uppercase tracking-[0.16em] text-[var(--foreground)] drop-shadow-[0_0_10px_rgb(var(--theme-primary-rgb)/0.4)] backdrop-blur-md">
               <span><b className="text-[var(--theme-primary)]">CLOCK</b> {clockTime}</span>
               <span><b className="text-[var(--theme-primary)]">NET</b> <span className="font-bold text-[var(--theme-primary)]">STABLE</span></span>
             </div>
@@ -516,10 +516,10 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
         </motion.div>
 
         <motion.div 
-          className="absolute left-6 top-[70px] hidden z-30 lg:flex flex-col gap-4 lg:left-8 xl:left-12 lg:w-[310px] xl:w-[330px]"
+          className="absolute left-4 right-4 top-[60px] z-30 flex flex-col gap-3 lg:gap-4 lg:right-auto lg:left-8 xl:left-12 lg:w-[310px] xl:w-[330px] pointer-events-none"
           animate={{ opacity: hudOpacity }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          style={{ pointerEvents: hudPointerEvents as any }}
+          style={{ pointerEvents: isVoiceMode ? "none" : undefined }}
         >
           <Panel3D mouseX={mx} mouseY={my} depth={0.35}>
             <div className="space-y-0.5">
@@ -529,7 +529,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                 exitRange={[0.278, 0.290]}
                 showCursor={true}
               >
-                <h1 className="text-lg font-black uppercase tracking-[0.12em] text-[var(--foreground)] drop-shadow-[0_0_14px_var(--foreground)] xl:text-xl">
+                <h1 className="text-sm font-black uppercase tracking-[0.12em] text-[var(--foreground)] drop-shadow-[0_0_14px_var(--foreground)] sm:text-base lg:text-lg xl:text-xl pointer-events-auto w-max">
                   PRASETYO BINTANG
                 </h1>
               </AnimatedTypewriterLine>
@@ -539,7 +539,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                 exitRange={[0.273, 0.285]}
                 showCursor={true}
               >
-                <div className="text-base font-extrabold uppercase tracking-[0.16em] xl:text-lg">
+                <div className="text-xs font-extrabold uppercase tracking-[0.16em] sm:text-sm lg:text-base xl:text-lg pointer-events-auto w-max">
                   <span className="text-[var(--theme-primary)] drop-shadow-[0_0_12px_var(--theme-primary)]">SIDIQ </span>
                   <span className="text-[var(--theme-primary)] drop-shadow-[0_0_12px_var(--theme-primary)]">NAWAWI</span>
                 </div>
@@ -576,7 +576,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
           </Panel3D>
 
           <div
-            className="flex flex-col gap-2.5"
+            className="flex flex-row overflow-x-auto pb-2 gap-2.5 lg:flex-col lg:overflow-visible lg:pb-0 snap-x pointer-events-auto [&::-webkit-scrollbar]:hidden"
             onMouseLeave={handleNodesLeave}
             onPointerLeave={handleNodesLeave}
           >
@@ -599,8 +599,8 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                       onPointerEnter={() => handleNodeEnter(category.id)}
                       onMouseEnter={() => handleNodeEnter(category.id)}
                       onFocus={() => handleNodeEnter(category.id)}
-                      onClick={() => handleNodeEnter(category.id)}
-                      className={`group flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all cursor-pointer backdrop-blur-md ${isActive
+                      onClick={() => activeCategory === category.id ? setActiveCategory(null) : handleNodeEnter(category.id)}
+                      className={`group flex w-[200px] shrink-0 snap-start lg:w-full items-center gap-3 rounded-xl border px-3 py-2 lg:px-3.5 lg:py-2.5 text-left transition-all cursor-pointer backdrop-blur-md ${isActive
                           ? "border-[var(--theme-primary)] bg-[rgb(var(--theme-primary-rgb)/0.15)] shadow-[0_0_22px_rgb(var(--theme-primary-rgb)/0.5)] scale-[1.02]"
                           : "border-[var(--foreground)]/20 bg-[var(--background)]/70 hover:border-[var(--theme-primary)]/70 hover:bg-[var(--background)]/90 hover:shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.35)]"
                         }`}
@@ -631,14 +631,14 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
         </motion.div>
 
         <motion.div
-          className="absolute right-6 top-[75px] hidden z-30 lg:block lg:right-8 xl:right-12 lg:w-[320px] xl:w-[350px]"
+          className={`absolute left-4 right-4 top-[210px] z-30 lg:top-[75px] lg:left-auto lg:right-8 xl:right-12 lg:w-[320px] xl:w-[350px] ${!activeCategory ? 'hidden lg:block' : 'block'} pointer-events-none`}
           onPointerEnter={clearActiveReset}
           onPointerLeave={handleNodesLeave}
           onMouseEnter={clearActiveReset}
           onMouseLeave={handleNodesLeave}
           animate={{ opacity: hudOpacity }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          style={{ pointerEvents: hudPointerEvents as any }}
+          style={{ pointerEvents: isVoiceMode ? "none" : undefined }}
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -664,7 +664,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                       <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--theme-primary)] drop-shadow-[0_0_8px_var(--theme-primary)]">
                         {"// DETAIL PENGALAMAN & ORGANISASI"}
                       </div>
-                      <div className="space-y-4 max-h-[calc(100vh-220px)] overflow-y-auto pr-1.5 scrollbar-thin">
+                      <div className="space-y-4 max-h-[42vh] lg:max-h-[calc(100vh-220px)] overflow-y-auto pr-1.5 scrollbar-thin pointer-events-auto">
                         {realExperience.map((exp, eIdx) => (
                           <div key={eIdx} className="border-l-2 border-[var(--theme-primary)] pl-3 space-y-1.5 py-0.5">
                             <div className="flex flex-col gap-0.5">
@@ -719,7 +719,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                         fromScale={0.9}
                       >
                         <Panel3D mouseX={mx} mouseY={my} depth={0.45 + i * 0.1}>
-                          <div className="space-y-1.5 border-l-2 border-[rgb(var(--theme-primary-rgb)/0.6)] pl-3 py-0.5">
+                          <div className="space-y-1.5 border-l-2 border-[rgb(var(--theme-primary-rgb)/0.6)] pl-3 py-0.5 pointer-events-auto">
                             <div className="flex items-center gap-2 text-[11px] font-bold text-[var(--theme-primary)] drop-shadow-[0_0_6px_rgb(var(--theme-primary-rgb)/0.5)]">
                               <cat.icon className="h-3.5 w-3.5 text-[var(--theme-primary)]" />
                               <span>{cat.category}</span>
@@ -750,7 +750,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   fromScale={0.9}
                 >
                   <Panel3D mouseX={mx} mouseY={my} depth={0.55}>
-                    <div className="space-y-2.5">
+                    <div className="space-y-2.5 pointer-events-auto">
                       <div className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--theme-primary)] drop-shadow-[0_0_8px_var(--theme-primary)]">
                         {"// DETAIL PENDIDIKAN"}
                       </div>
@@ -806,7 +806,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                         fromScale={0.9}
                       >
                         <Panel3D mouseX={mx} mouseY={my} depth={0.44 + i * 0.08}>
-                          <div className="flex items-start gap-2.5 py-1 transition-all hover:translate-x-1">
+                          <div className="flex items-start gap-2.5 py-1 transition-all hover:translate-x-1 pointer-events-auto">
                             <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded border border-[rgb(var(--theme-primary-rgb)/0.5)] bg-[rgb(var(--theme-primary-rgb)/0.1)] shadow-[0_0_8px_rgb(var(--theme-primary-rgb)/0.3)]">
                               <Image
                                 src={p.image}
@@ -837,7 +837,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
               )}
 
               {!activeCategory && (
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 pointer-events-auto">
                   <AnimatedHudElement
                     smoothProgress={combinedProgress}
                     enterRange={[0.188, 0.200]}
@@ -966,13 +966,13 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
           </AnimatePresence>
         </motion.div>
 
-        <AnimatedHudElement
-          smoothProgress={combinedProgress}
-          enterRange={[0.195, 0.210]}
-          exitRange={[0.260, 0.275]}
-          fromY={35}
-          className="absolute bottom-5 left-8 right-8 z-30 pointer-events-none"
-        >
+          <AnimatedHudElement
+            smoothProgress={combinedProgress}
+            enterRange={[0.195, 0.210]}
+            exitRange={[0.260, 0.275]}
+            fromY={35}
+            className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-8 sm:right-8 z-30 pointer-events-none"
+          >
           <Panel3D mouseX={mx} mouseY={my} depth={0.38}
             className="flex items-center justify-center"
           >

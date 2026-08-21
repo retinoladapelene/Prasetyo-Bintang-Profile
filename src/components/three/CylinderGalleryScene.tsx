@@ -234,6 +234,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
 
     const state = stateRef.current;
     state.disposed = false;
+    const isMobile = window.innerWidth < 768;
 
     // 1. Setup Renderer (Transparent background)
     const renderer = new THREE.WebGLRenderer({
@@ -295,9 +296,10 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
-        // Normalize scale so max dimension is approx 7.6 units - fills 70% of screen as the HUD background!
+        // Normalize scale so max dimension is approx 7.6 units on desktop, smaller on mobile!
         const maxDim = Math.max(size.x, size.y, size.z);
-        const scaleFactor = maxDim > 0 ? 7.6 / maxDim : 3.5;
+        const targetSize = isMobile ? 4.5 : 7.6; // Diperkecil untuk mobile
+        const scaleFactor = maxDim > 0 ? targetSize / maxDim : (isMobile ? 2.0 : 3.5);
         loadedModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
         // Center the model at origin, positioned so the head/helmet sits right in the center of the viewport
@@ -305,11 +307,12 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
         loadedModel.position.y = -center.y * scaleFactor;
         loadedModel.position.z = -center.z * scaleFactor;
 
-        const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+        // OPTIMIZATION: Reduce texture anisotropy on mobile to save GPU memory and bandwidth
+        const maxAnisotropy = isMobile ? 1 : renderer.capabilities.getMaxAnisotropy();
         const optimizeTexture = (tex: THREE.Texture | null) => {
           if (!tex) return;
           tex.anisotropy = maxAnisotropy;
-          tex.minFilter = THREE.LinearMipmapLinearFilter;
+          tex.minFilter = isMobile ? THREE.LinearFilter : THREE.LinearMipmapLinearFilter; // Pakai filter lebih ringan di mobile
           tex.magFilter = THREE.LinearFilter;
           tex.needsUpdate = true;
         };
@@ -505,6 +508,10 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
 
     // 4. Create Carousel Group
     const carouselGroup = new THREE.Group();
+    if (isMobile) {
+      carouselGroup.scale.set(0.65, 0.65, 0.65); // Perkecil drastis untuk mobile
+      carouselGroup.position.y = 1.5; // Naikkan sedikit agar seimbang posisinya
+    }
     scene.add(carouselGroup);
     state.carouselGroup = carouselGroup;
 
