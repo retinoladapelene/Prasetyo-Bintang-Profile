@@ -8,7 +8,7 @@ const WINDOW_MS = 24 * 60 * 60 * 1000; // 24 jam (dalam milidetik)
 
 export async function POST(req: Request) {
   try {
-    const { message, history = [] } = await req.json();
+    const { message, history = [], userName } = await req.json();
 
     if (!message) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const systemPrompt = await getSystemPrompt();
+    const systemPrompt = await getSystemPrompt(userName);
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',

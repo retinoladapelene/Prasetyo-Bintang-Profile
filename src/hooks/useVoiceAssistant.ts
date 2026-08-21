@@ -9,6 +9,36 @@ export function useVoiceAssistant() {
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<{role: string, content: string}[]>([]);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  // Load memori dari localStorage saat pertama kali dimuat
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedName = localStorage.getItem('stars_user_name');
+      if (savedName) setUserName(savedName);
+
+      const savedHistory = localStorage.getItem('stars_chat_history');
+      if (savedHistory) {
+        try {
+          setChatHistory(JSON.parse(savedHistory));
+        } catch (e) {
+          console.error("Failed to parse chat history");
+        }
+      }
+    }
+  }, []);
+
+  // Simpan nama ke localStorage jika berubah
+  useEffect(() => {
+    if (userName) localStorage.setItem('stars_user_name', userName);
+  }, [userName]);
+
+  // Simpan riwayat chat ke localStorage jika berubah
+  useEffect(() => {
+    if (chatHistory.length > 0) {
+      localStorage.setItem('stars_chat_history', JSON.stringify(chatHistory));
+    }
+  }, [chatHistory]);
 
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -27,7 +57,7 @@ export function useVoiceAssistant() {
       const chatRes = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history: chatHistory }),
+        body: JSON.stringify({ message: text, history: chatHistory, userName }),
       });
 
       if (!chatRes.ok) {
@@ -35,7 +65,16 @@ export function useVoiceAssistant() {
         throw new Error(err.error || 'Gagal menghubungi Groq API');
       }
 
-      const { reply, audioUrl } = await chatRes.json();
+      let { reply, audioUrl } = await chatRes.json();
+      
+      // Deteksi jika AI mengenali nama user (format [USER_NAME: Andi])
+      const nameMatch = reply.match(/\[USER_NAME:\s*(.+?)\]/i);
+      if (nameMatch && nameMatch[1]) {
+        setUserName(nameMatch[1].trim());
+      }
+      
+      // Hapus tag rahasia agar tidak dibaca oleh TTS
+      reply = reply.replace(/\[USER_NAME:\s*.+?\]/gi, '').trim();
       
       // Simpan percakapan ke memori (maksimal 6 pesan terakhir agar konteks tidak terlalu berat)
       setChatHistory(prev => [...prev, { role: 'user', content: text }, { role: 'assistant', content: reply }].slice(-6));
@@ -181,5 +220,6 @@ export function useVoiceAssistant() {
     transcript,
     error,
     startListening,
+    userName,
   };
 }
