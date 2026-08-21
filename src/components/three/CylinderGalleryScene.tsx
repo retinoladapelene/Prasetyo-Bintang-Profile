@@ -234,6 +234,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
 
     const state = stateRef.current;
     state.disposed = false;
+    const isMobile = window.innerWidth < 768;
 
     // 1. Setup Renderer (Transparent background)
     const renderer = new THREE.WebGLRenderer({
@@ -295,9 +296,10 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
 
-        // Normalize scale so max dimension is approx 7.6 units - fills 70% of screen as the HUD background!
+        // Normalize scale so max dimension is approx 7.6 units on desktop, smaller on mobile!
         const maxDim = Math.max(size.x, size.y, size.z);
-        const scaleFactor = maxDim > 0 ? 7.6 / maxDim : 3.5;
+        const targetSize = isMobile ? 4.5 : 7.6; // Diperkecil untuk mobile
+        const scaleFactor = maxDim > 0 ? targetSize / maxDim : (isMobile ? 2.0 : 3.5);
         loadedModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
         // Center the model at origin, positioned so the head/helmet sits right in the center of the viewport
@@ -305,10 +307,13 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
         loadedModel.position.y = -center.y * scaleFactor;
         loadedModel.position.z = -center.z * scaleFactor;
 
-        const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+        // OPTIMIZATION: Reduce texture anisotropy on mobile to save GPU memory and bandwidth
+        const maxAnisotropy = isMobile ? 1 : renderer.capabilities.getMaxAnisotropy();
         const optimizeTexture = (tex: THREE.Texture | null) => {
           if (!tex) return;
           tex.anisotropy = maxAnisotropy;
+          // Mipmaps are essential for performance when textures are minified (drawn smaller on mobile).
+          // Disabling them (LinearFilter) causes severe GPU cache misses and massive lag.
           tex.minFilter = THREE.LinearMipmapLinearFilter;
           tex.magFilter = THREE.LinearFilter;
           tex.needsUpdate = true;
@@ -505,6 +510,10 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
 
     // 4. Create Carousel Group
     const carouselGroup = new THREE.Group();
+    if (isMobile) {
+      carouselGroup.scale.set(0.65, 0.65, 0.65); // Perkecil drastis untuk mobile
+      carouselGroup.position.y = 1.5; // Naikkan sedikit agar seimbang posisinya
+    }
     scene.add(carouselGroup);
     state.carouselGroup = carouselGroup;
 
@@ -514,7 +523,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
     state.bgGroup = bgGroup;
 
     const bgGeometry = new THREE.CylinderGeometry(
-      22, 22, 40, 128, 24, true,
+      22, 22, 40, isMobile ? 48 : 128, isMobile ? 12 : 24, true,
       0, Math.PI * 2
     );
 
@@ -586,6 +595,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
         }
       `,
       fragmentShader: `
+        ${isMobile ? '#define IS_MOBILE\\n' : ''}
         uniform sampler2D uTexture;
         uniform float uOpacity;
         uniform float uShift;
@@ -637,6 +647,10 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
           // Radius kelengkungan sudut dalam unit fisik (seragam untuk semua kotak)
           float rCorner = 0.4; 
           
+          float mask = 1.0;
+          float cellHash = 0.5;
+
+          #ifndef IS_MOBILE
           vec2 scale0 = vec2(8.0, 4.0);
           vec2 uv0 = uv * scale0;
           vec2 g0 = floor(uv0);
@@ -668,8 +682,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
           float h3 = hash(g3);
           float h4 = hash(g4);
           
-          float mask = 0.0;
-          float cellHash = 0.0;
+          mask = 0.0;
+          cellHash = 0.0;
           
           if (h0 > 0.8) {
             mask = box0; cellHash = h0;
@@ -682,6 +696,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
           } else {
             mask = box4; cellHash = h4;
           }
+          #endif
           
           // --- Surface Texture & Styling ---
           
@@ -701,8 +716,10 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
           vec3 surfaceColor = darkBase + glowColor;
           
           // 3. Tambahkan efek kedipan (pulse) halus pada sel-sel bento grid
+          #ifndef IS_MOBILE
           float pulse = (sin(uTime * 1.5 + cellHash * 6.28) * 0.5 + 0.5) * 0.25;
           surfaceColor += (texColor.rgb * pulse * cellHash);
+          #endif
           
           // 4. Saat morphing menjadi dinding datar, pudarkan grid bento (mask menuju 1.0)
           float effectiveMask = mix(mask, 1.0, uPerspectiveMorph);
@@ -718,6 +735,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
           // Final linger phase: shift from dense bento texture into a calmer perspective wall.
           float vanish = pow(uv.x, 1.45);
           
+          vec3 perspectiveGrid = vec3(0.0);
+          #ifndef IS_MOBILE
           // 1. Grid Uniform: Skala diubah ke 0.45 agar kotak grid lebih besar (jumlah kotak lebih sedikit)
           float wallPhaseX = vWorldPosition.x * 0.45 + uTime * 0.6;
           float wallPhaseY = vWorldPosition.y * 0.45;
@@ -749,7 +768,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
           vec3 glowingTip = vec3(0.1, 0.8, 1.0) * tipGlow * 3.0;
           
           // Gabungkan warna grid
-          vec3 perspectiveGrid = (gridBaseColor * circuitGridMask * 0.15) + glowingTip;
+          perspectiveGrid = (gridBaseColor * circuitGridMask * 0.15) + glowingTip;
+          #endif
           
           // Pastikan grid HILANG (dikalikan 0) sebelum morphing dimulai.
           float gridFadeIn = smoothstep(0.01, 0.05, uPerspectiveMorph);
@@ -763,13 +783,16 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
           float imageFade = 1.0 - smoothstep(0.0, 0.4, uPerspectiveMorph);
           finalColor *= imageFade;
 
-          // Offset uv.y diubah dari 0.09 menjadi 0.18 agar video bergeser turun ke bawah di dinding (bagian atas video terlihat)
-          vec2 videoUv = vec2(fract(uv.x * 0.7 + 0.18), clamp(uv.y * 0.82 + 0.18, 0.0, 1.0));
-          vec3 videoColor = texture2D(uVideoTexture, videoUv).rgb;
-          float videoLum = dot(videoColor, vec3(0.299, 0.587, 0.114));
-          videoColor = mix(vec3(videoLum), videoColor, 0.55) * 0.42;
-          
-          finalColor = mix(finalColor, videoColor, uVideoBlend);
+          // Hanya proses video jika blend-nya tidak 0 (Menghemat GPU processing di mobile)
+          if (uVideoBlend > 0.005) {
+            // Offset uv.y diubah dari 0.09 menjadi 0.18 agar video bergeser turun ke bawah di dinding (bagian atas video terlihat)
+            vec2 videoUv = vec2(fract(uv.x * 0.7 + 0.18), clamp(uv.y * 0.82 + 0.18, 0.0, 1.0));
+            vec3 videoColor = texture2D(uVideoTexture, videoUv).rgb;
+            float videoLum = dot(videoColor, vec3(0.299, 0.587, 0.114));
+            videoColor = mix(vec3(videoLum), videoColor, 0.55) * 0.42;
+            
+            finalColor = mix(finalColor, videoColor, uVideoBlend);
+          }
           
           // Darken the surface image/video according to blackout, but DO NOT darken the grid!
           finalColor = mix(finalColor, vec3(0.0), uBlackout);
@@ -858,9 +881,9 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
     const height = 1.6; // Smaller height (was 2.2)
     const thetaLength = 0.52; // Smaller width (was 0.71)
 
-    // Create a shared geometry for all panels
+    // Create a shared geometry for all panels (lower poly on mobile)
     const geometry = new THREE.CylinderGeometry(
-      radius, radius, height, 32, 1, true,
+      radius, radius, height, isMobile ? 16 : 32, 1, true,
       -thetaLength / 2, thetaLength // Centered on Z axis
     );
 
@@ -1368,6 +1391,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
     let smoothedScroll = 0;
     let initialized = false;
     let lastLightColorUpdate = 0;
+    let lastVideoCheckTime = 0;
     const raycaster = new THREE.Raycaster();
     const animate = () => {
       if (state.disposed) return;
@@ -1944,59 +1968,65 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
 
       // ── SMART VIDEO AUTO-PAUSE (GPU OPTIMIZATION) ──
       // Calculate which videos are currently visible on screen to save decoding CPU/GPU
-      const videoVisibility = new Map<HTMLVideoElement, boolean>();
-      state.videoElements.forEach(vid => videoVisibility.set(vid, false));
+      // OPTIMIZATION: Only check video visibility every 250ms instead of every frame (60x/sec).
+      // This prevents heavy CPU traversal of all meshes on mobile devices.
+      if (now - lastVideoCheckTime > 0.25) {
+        lastVideoCheckTime = now;
+        
+        const videoVisibility = new Map<HTMLVideoElement, boolean>();
+        state.videoElements.forEach(vid => videoVisibility.set(vid, false));
 
-      const markVideoVisible = (texture: any) => {
-        if (texture && texture.isVideoTexture && texture.userData && texture.userData.videoElement) {
-          videoVisibility.set(texture.userData.videoElement, true);
-        }
-      };
-
-      state.meshes.forEach(meshData => {
-        if (meshData.mesh.visible) {
-          markVideoVisible((meshData.mesh.material as any).map);
-        }
-      });
-
-      state.bgMeshes.forEach(meshData => {
-        if (meshData.mesh.visible) {
-          const mat = meshData.material as any;
-          markVideoVisible(mat.uniforms.uTexture?.value);
-          if (mat.uniforms.uVideoBlend?.value > 0.005) {
-            markVideoVisible(mat.uniforms.uVideoTexture?.value);
+        const markVideoVisible = (texture: any) => {
+          if (texture && texture.isVideoTexture && texture.userData && texture.userData.videoElement) {
+            videoVisibility.set(texture.userData.videoElement, true);
           }
-        }
-      });
+        };
 
-      state.wallPanels.forEach(wpData => {
-        if (wpData.mesh.visible) {
-          markVideoVisible((wpData.material as any).uniforms.uMap?.value);
-        }
-      });
+        state.meshes.forEach(meshData => {
+          if (meshData.mesh.visible) {
+            markVideoVisible((meshData.mesh.material as any).map);
+          }
+        });
 
-      videoVisibility.forEach((isVisible, video) => {
-        if (isVisible) {
-          if (video.paused) {
-            const p = video.play();
-            if (p !== undefined) {
-              (video as any)._playPromise = p;
-              p.catch(() => {});
+        state.bgMeshes.forEach(meshData => {
+          if (meshData.mesh.visible) {
+            const mat = meshData.material as any;
+            markVideoVisible(mat.uniforms.uTexture?.value);
+            if (mat.uniforms.uVideoBlend?.value > 0.005) {
+              markVideoVisible(mat.uniforms.uVideoTexture?.value);
             }
           }
-        } else {
-          if (!video.paused) {
-            const p = (video as any)._playPromise;
-            if (p !== undefined) {
-              p.then(() => {
+        });
+
+        state.wallPanels.forEach(wpData => {
+          if (wpData.mesh.visible) {
+            markVideoVisible((wpData.material as any).uniforms.uMap?.value);
+          }
+        });
+
+        videoVisibility.forEach((isVisible, video) => {
+          if (isVisible) {
+            if (video.paused) {
+              const p = video.play();
+              if (p !== undefined) {
+                (video as any)._playPromise = p;
+                p.catch(() => {});
+              }
+            }
+          } else {
+            if (!video.paused) {
+              const p = (video as any)._playPromise;
+              if (p !== undefined) {
+                p.then(() => {
+                  video.pause();
+                }).catch(() => {});
+              } else {
                 video.pause();
-              }).catch(() => {});
-            } else {
-              video.pause();
+              }
             }
           }
-        }
-      });
+        });
+      }
 
       renderer.render(scene, camera);
     };
