@@ -66,7 +66,15 @@ export async function getSystemPrompt(userName?: string): Promise<string> {
           'Notion-Version': '2022-06-28',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({
+          sorts: [
+            {
+              timestamp: "created_time",
+              direction: "descending"
+            }
+          ],
+          page_size: 10
+        })
       });
       
       if (!res.ok) {
@@ -111,9 +119,19 @@ export async function getSystemPrompt(userName?: string): Promise<string> {
           }
         }
 
+        // Cari kolom tanggal (optional) agar AI tahu pasti kapan diary ditulis
+        const keyDate = Object.keys(props).find(k => k.toLowerCase() === 'date' || k.toLowerCase() === 'tanggal' || k.toLowerCase() === 'waktu');
+        let dateStr = '';
+        if (keyDate) {
+          const propDate = props[keyDate];
+          if (propDate.type === 'date' && propDate.date?.start) {
+            dateStr = propDate.date.start; // Format: YYYY-MM-DD
+          }
+        }
+
         if (isi) {
           if (kategori.toLowerCase() === 'diary') {
-            newDiary.push(isi);
+            newDiary.push(dateStr ? `[${dateStr}]: ${isi}` : isi);
           } else if (kategori.toLowerCase() === 'memori') {
             newMemories.push(isi);
           }
