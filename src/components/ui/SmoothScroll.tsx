@@ -17,7 +17,6 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      smoothTouch: false,
       syncTouch: false, // Dimatikan agar native scroll browser di mobile bisa jalan dengan lancar.
       touchMultiplier: 2,
     });
