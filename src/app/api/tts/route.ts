@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     // Synthesize text menggunakan suara Ardi (Pria, Indonesia)
     // Pilihan lain: id-ID-GadisNeural (Wanita)
     await tts.synthesize(text, "id-ID-ArdiNeural", {
-      rate: '5%',   // Sedikit dipercepat agar lebih natural
+      rate: '-10%', // Diperlambat sedikit agar lebih santai dan pronounciation-nya jelas
       volume: '0%', // Volume normal
       pitch: '-5Hz' // Pitch sedikit diturunkan agar terkesan lebih maskulin/santai
     });
