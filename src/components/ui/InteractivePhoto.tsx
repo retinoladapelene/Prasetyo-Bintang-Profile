@@ -176,7 +176,7 @@ export function InteractivePhoto({ settings }: { settings: any }) {
         maskX.set(dimensions.width / 2);
         maskY.set(dimensions.height / 2);
       }}
-      className="relative mx-auto h-full w-full select-none overflow-hidden touch-none pointer-events-auto group"
+      className="relative mx-auto h-full w-full select-none overflow-hidden pointer-events-auto group"
     >
       <svg id="interactive-photo-filters" style={{ position: "absolute", width: "100%", height: "100%", pointerEvents: "none", zIndex: 30 }}>
         <defs>
