@@ -17,7 +17,9 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      syncTouch: false, // Dimatikan karena kita sudah menghapus lock:true di ArchiveGallery. Biarkan native scroll mengambil alih agar touch tidak patah-patah.
+      smoothTouch: false,
+      syncTouch: true, // Diaktifkan kembali agar mobile bisa scroll.
+      touchMultiplier: 2,
     });
 
     (window as any).lenis = lenis;
