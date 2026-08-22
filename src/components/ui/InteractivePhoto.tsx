@@ -28,9 +28,11 @@ export function InteractivePhoto({ settings }: { settings: any }) {
     objectPosition: 'bottom',
     transform: 'scale(1.25) translateY(10%)',
     transformOrigin: 'bottom center',
+    filter: 'brightness(0.85)'
   } : {
     objectFit: 'contain',
     objectPosition: 'bottom',
+    filter: 'brightness(0.85)'
   };
 
   // Opsi B (Fixed Aspect-Ratio Wrapper): Di mobile, kita atur wadah penampung dengan rasio pasti 1:1.38
@@ -281,7 +283,6 @@ export function InteractivePhoto({ settings }: { settings: any }) {
             className="origin-bottom"
             style={basePhotoStyle}
           />
-          <div className="absolute inset-0 bg-black/15 pointer-events-none" />
         </div>
 
         {/* 100% GPU-Accelerated Top-to-Bottom Wireframe Scanner with Dynamic Schema Color */}
