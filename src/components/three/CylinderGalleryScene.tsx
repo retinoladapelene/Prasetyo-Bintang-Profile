@@ -547,6 +547,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
         uVideoBlend: { value: 0 },
         uWallScroll: { value: 0 },
         uBlackout: { value: 0 },
+        uResolution: { value: new THREE.Vector2(1920, 1080) },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -614,6 +615,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
         uniform float uVideoBlend;
         uniform float uWallScroll;
         uniform float uBlackout;
+        uniform vec2 uResolution;
         varying vec2 vUv;
         varying vec3 vWorldPosition;
         
