@@ -241,8 +241,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
       antialias: false, // OPTIMASI: Matikan antialias sepenuhnya untuk model 3D berat
       powerPreference: "high-performance"
     });
-    // OPTIMASI: Batasi pixel ratio ke maksimal 1.5 agar seimbang antara ketajaman (sharpness) dan performa GPU
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    // OPTIMASI EXTREME: Batasi pixel ratio ke 1.0 pada mobile untuk mencegah lag (mengurangi fill rate 2-3x lipat)
+    renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -712,6 +712,13 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
           } else {
             mask = box4; cellHash = h4;
           }
+          #else
+          // MOBILE OPTIMIZED BENTO MASK (Hanya 1 layer untuk hemat GPU, step bukan smoothstep berulang)
+          vec2 scaleM = vec2(16.0, 8.0);
+          vec2 uvM = uv * scaleM;
+          vec2 gM = floor(uvM);
+          mask = roundedBox(uvM, scaleM, rCorner);
+          cellHash = hash(gM);
           #endif
           
           // --- Surface Texture & Styling ---
@@ -734,6 +741,10 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
           // 3. Tambahkan efek kedipan (pulse) halus pada sel-sel bento grid
           #ifndef IS_MOBILE
           float pulse = (sin(uTime * 1.5 + cellHash * 6.28) * 0.5 + 0.5) * 0.25;
+          surfaceColor += (texColor.rgb * pulse * cellHash);
+          #else
+          // MOBILE PULSE (Animasi disederhanakan)
+          float pulse = (sin(uTime * 2.0 + cellHash * 3.14) * 0.5 + 0.5) * 0.15;
           surfaceColor += (texColor.rgb * pulse * cellHash);
           #endif
           
@@ -785,12 +796,34 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
           
           // Gabungkan warna grid
           perspectiveGrid = (gridBaseColor * circuitGridMask * 0.15) + glowingTip;
+          #else
+          // MOBILE PERSPECTIVE GRID (Sangat dioptimalkan: menggunakan fract+step bukan cos+smoothstep)
+          float wallPhaseX = vWorldPosition.x * 0.45 + uTime * 0.6;
+          float wallPhaseY = vWorldPosition.y * 0.45;
+          
+          float gridLineV = step(0.97, fract(wallPhaseX));
+          float gridLineH = step(0.97, fract(wallPhaseY));
+          
+          float dist = abs(vWorldPosition.x);
+          float growthEdge = uPerspectiveMorph * 120.0; 
+          
+          float growth = 1.0 - smoothstep(growthEdge - 20.0, growthEdge, dist);
+          float circuitGridMask = max(gridLineV, gridLineH) * growth;
+          
+          vec3 gridBaseColor = vec3(0.5, 0.7, 0.9);
+          perspectiveGrid = gridBaseColor * circuitGridMask * 0.25;
           #endif
           
           // Pastikan grid HILANG (dikalikan 0) sebelum morphing dimulai.
           float gridFadeIn = smoothstep(0.01, 0.05, uPerspectiveMorph);
           // HILANGKAN grid secara halus saat background sudah sepenuhnya menjadi J-Curve (uPerspectiveMorph mendekati 1.0)
           float gridFadeOut = 1.0 - smoothstep(0.8, 1.0, uPerspectiveMorph);
+          
+          #ifdef IS_MOBILE
+          // Di mobile, video latar di JCurve dinonaktifkan demi performa.
+          // Jadi, grid dipertahankan (tidak di-fade-out) agar background JCurve tidak hitam polos!
+          gridFadeOut = 1.0;
+          #endif
           
           perspectiveGrid *= (gridFadeIn * gridFadeOut);
           // ──────────────────────────────────────
@@ -1090,40 +1123,56 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
       textCtx.textAlign = 'center';
       textCtx.textBaseline = 'middle';
       
+      // Calculate responsive center
+      const centerX = textCanvas.width / 2;
+      const centerY = textCanvas.height / 2;
+      
+      // Responsive sizing
+      const titleFontSize = isMobile ? 120 : 200;
+      const titleLetterSpacing = isMobile ? '20px' : '60px';
+      const titleYOffset = isMobile ? -30 : -60;
+      
+      const sepWidth = isMobile ? 50 : 80;
+      const sepYOffset = isMobile ? 35 : 50;
+      
+      const subFontSize = isMobile ? 24 : 45;
+      const subLetterSpacing = isMobile ? '15px' : '30px';
+      const subYOffset = isMobile ? 90 : 140;
+      
       // Modern Letter Spacing (Support modern browsers)
       if ('letterSpacing' in textCtx) {
-        (textCtx as any).letterSpacing = '60px';
+        (textCtx as any).letterSpacing = titleLetterSpacing;
       }
       
       // Main Title
-      textCtx.font = '300 200px "Inter", "Outfit", sans-serif';
+      textCtx.font = `300 ${titleFontSize}px "Inter", "Outfit", sans-serif`;
       textCtx.fillStyle = 'rgba(255, 255, 255, 0.9)'; // Slightly transparent for elegance
       // Very subtle elegant glow
       textCtx.shadowColor = 'rgba(255, 255, 255, 0.2)';
-      textCtx.shadowBlur = 15;
+      textCtx.shadowBlur = isMobile ? 8 : 15;
       textCtx.shadowOffsetX = 0;
       textCtx.shadowOffsetY = 0;
       
-      textCtx.fillText('T H E   W O R K F L O W', 768, 384 - 60);
+      textCtx.fillText('T H E   W O R K F L O W', centerX, centerY + titleYOffset);
 
       // Reset shadow for subsequent elements
       textCtx.shadowBlur = 0;
       
       // Minimalist Separator Line
       textCtx.beginPath();
-      textCtx.moveTo(768 - 80, 384 + 50);
-      textCtx.lineTo(768 + 80, 384 + 50);
+      textCtx.moveTo(centerX - sepWidth, centerY + sepYOffset);
+      textCtx.lineTo(centerX + sepWidth, centerY + sepYOffset);
       textCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-      textCtx.lineWidth = 2;
+      textCtx.lineWidth = isMobile ? 1 : 2;
       textCtx.stroke();
       
       // Subtitle
       if ('letterSpacing' in textCtx) {
-        (textCtx as any).letterSpacing = '30px';
+        (textCtx as any).letterSpacing = subLetterSpacing;
       }
-      textCtx.font = '400 45px "Inter", "Outfit", sans-serif';
+      textCtx.font = `400 ${subFontSize}px "Inter", "Outfit", sans-serif`;
       textCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-      textCtx.fillText('C R E A T I V E   P R O C E S S', 768, 384 + 140);
+      textCtx.fillText('C R E A T I V E   P R O C E S S', centerX, centerY + subYOffset);
     }
     
     const textTex = new THREE.CanvasTexture(textCanvas);
@@ -1338,8 +1387,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
         side: THREE.DoubleSide,
         uniforms: {
           uT: { value: 0.85 + idx * 0.35 }, // start off-screen right
-          uPanelTW: { value: PANEL_TW },
-          uPanelH: { value: PANEL_H },
+          uPanelTW: { value: isMobile ? PANEL_TW * 0.6 : PANEL_TW },
+          uPanelH: { value: isMobile ? PANEL_H * 0.6 : PANEL_H },
           uMorph: { value: 0 },
           uFullScreenProgress: { value: 0 },
           uMap: { value: null },
@@ -1665,9 +1714,9 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
           let wp = Math.max((smoothedScroll - WALL_START) / (WALL_END - WALL_START), 0);
 
           const START_T = GALLERY_CONFIG.START_T;
-          const T_LEFT = GALLERY_CONFIG.T_LEFT;
+          const T_LEFT = isMobile ? 0.56 : GALLERY_CONFIG.T_LEFT;
           const SPACING = GALLERY_CONFIG.SPACING;
-          const TRAVEL = GALLERY_TRAVEL;
+          const TRAVEL = START_T - T_LEFT + 4 * SPACING;
 
           rawIndex = (wp * TRAVEL - (START_T - T_LEFT)) / SPACING;
           targetIndex = Math.round(rawIndex);
@@ -1808,7 +1857,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
         // Menggunakan konstanta dari konfigurasi di atas
         const START_T = GALLERY_CONFIG.START_T;
         const MIN_T = -3.50;    // Batas aman
-        const TRAVEL = GALLERY_TRAVEL;
+        const T_LEFT = isMobile ? 0.56 : GALLERY_CONFIG.T_LEFT;
+        const TRAVEL = START_T - T_LEFT + 4 * GALLERY_CONFIG.SPACING;
         const SPACING = GALLERY_CONFIG.SPACING;
 
         // Calculate raw position (unclamped)

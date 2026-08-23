@@ -255,12 +255,15 @@ export function ArchiveGallery() {
     offset: ["start start", "end end"]
   });
 
-  // OPTIMIZED: We removed useSpring here!
-  // GSAP ScrollTrigger already animates the scrollbar smoothly during the "snap" phase.
-  // Adding a spring on top of a smooth GSAP animation causes them to fight (lag and overshoot),
-  // which makes the rotation feel choppy (patah-patah).
-  const smoothProgress = scrollYProgress;
-  const cinematicProgress = scrollYProgress; // DECOUPLED FROM THREE.JS: now directly uses smooth Framer Motion scroll
+  // OPTIMIZED: We re-introduced useSpring with ultra-fast responsiveness (mass: 0.1, stiffness: 800).
+  // This absorbs the 1-frame native scroll jumps when swiping hard on trackpads/mobile,
+  // preventing the 3D scene from "terlempar jauh", while not fighting the GSAP smoothing.
+  const cinematicProgress = useSpring(scrollYProgress, {
+    stiffness: 800,
+    damping: 80,
+    mass: 0.1,
+    restDelta: 0.0001
+  });
   const PADDING_START = 5;
   const PADDING_END = 4;
   const totalSteps = (galleryItems.length - 1) + PADDING_START + PADDING_END;
@@ -306,15 +309,15 @@ export function ArchiveGallery() {
   // Map scroll progress to rotation. 4 items = total 270 degrees of rotation to go from index 0 to index 3.
   const anglePerItem = 360 / Math.max(galleryItems.length, 4); // assume min 4 slots for the cylinder
   const maxRotation = (galleryItems.length - 1) * anglePerItem;
-  const rotateY = useTransform(smoothProgress, [0, 1], [0, -maxRotation]);
+  const rotateY = useTransform(cinematicProgress, [0, 1], [0, -maxRotation]);
 
   // Map scroll progress to background rotation (parallax effect, slower than main content)
-  const bgRotateY = useTransform(smoothProgress, [0, 1], [0, -maxRotation * 0.3]);
+  const bgRotateY = useTransform(cinematicProgress, [0, 1], [0, -maxRotation * 0.3]);
 
   // Map scroll progress to Y translation (Spiral effect)
   const yOffsetPerItem = 80; // 80px drop per item (staircase effect)
   const maxYTranslation = (galleryItems.length - 1) * yOffsetPerItem;
-  const translateY = useTransform(smoothProgress, [0, 1], [0, -maxYTranslation]);
+  const translateY = useTransform(cinematicProgress, [0, 1], [0, -maxYTranslation]);
 
   // Stage 2A: Background grid triggers early, then lingers after project UI and panels disappear.
   const backgroundOpacity = useTransform(cinematicProgress, [0.15, 0.18, 0.985, 0.998], [0, 1, 1, 1]);
@@ -380,7 +383,8 @@ export function ArchiveGallery() {
             targetScrollY = st.start + (st.end - st.start) * 0.990; 
           } else {
             const START_T = 1.40;
-            const T_LEFT = 0.37;
+            const isMobile = window.innerWidth < 768;
+            const T_LEFT = isMobile ? 0.56 : 0.37;
             const SPACING = 1.15;
             const TRAVEL = START_T - T_LEFT + 4 * SPACING;
             
@@ -391,11 +395,14 @@ export function ArchiveGallery() {
           }
         }
         
-        // Scroll ke panel terdekat tanpa mengunci scroll secara paksa (menghindari stutter di mobile)
+        // Scroll ke panel terdekat
+        // Gunakan force: true dan lock: true agar animasi tidak dibatalkan dan 
+        // native scroll tidak melompat jauh (terlempar) saat user melakukan swipe keras.
         lenis.scrollTo(targetScrollY, { 
-          duration: 1.2, 
+          duration: 0.8, 
           easing: (t: number) => 1 - Math.pow(1 - t, 4), // easeOutQuart
-          // lock: true dihapus karena menyebabkan konflik dengan native touch scroll (patah-patah)
+          force: true,
+          lock: true,
           onComplete: () => {
             // Unlock snap only after fully settled
             setTimeout(() => {
@@ -416,27 +423,43 @@ export function ArchiveGallery() {
           const diff = activeIndex - clampedActiveIndex;
           
           if (diff !== 0 && !isSnappingRef.current) {
-            // Biarkan user scroll bebas, hanya update UI teks/deskripsi sesuai index yang paling dekat
+            // Update UI teks/deskripsi, tapi jangan biarkan melompat lebih dari 1 jika user swipe keras
             if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-            setClampedActiveIndex(activeIndex); 
+            const step = diff > 0 ? 1 : -1;
+            setClampedActiveIndex(clampedActiveIndex + step); 
           }
 
-          const handleScroll = () => {
+          const handleScroll = (e: any) => {
             if (isSnappingRef.current || isWallPanel) return;
             
-            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-            scrollTimeoutRef.current = setTimeout(() => {
-              // Hanya snap JIKA user sudah benar-benar BERHENTI scroll (setelah 200ms agar lebih responsif)
-              
-              // Mencegah snap saat berada di fase Hero atau HUD (sebelum 0.35)
-              // Ini memungkinkan user berhenti scroll dan mengklik tombol "Ask me anything" tanpa terlempar ke panel pertama.
-              const currentProgress = cinematicProgress.get();
-              if (currentProgress < 0.35) return;
+            const currentProgress = cinematicProgress.get();
+            if (currentProgress < 0.35) return;
 
-              if (clampedActiveIndex >= 0) {
-                doSnap(clampedActiveIndex, false);
+            // Discrete Scroll: 1 Scroll = 1 Panel
+            // Ambang batas sangat rendah agar dikit aja langsung pindah
+            if (Math.abs(e.velocity) > 0.05) {
+              if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+              
+              const step = e.velocity > 0 ? 1 : -1;
+              const newIndex = clampedActiveIndex + step;
+              const maxIndex = galleryItems.length - 1;
+              const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
+              
+              if (clampedNewIndex !== clampedActiveIndex) {
+                setClampedActiveIndex(clampedNewIndex);
+                if (clampedNewIndex >= 0) {
+                  doSnap(clampedNewIndex, false);
+                }
               }
-            }, 200);
+            } else {
+              // Fallback snap if they scroll very slowly
+              if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+              scrollTimeoutRef.current = setTimeout(() => {
+                if (clampedActiveIndex >= 0) {
+                  doSnap(clampedActiveIndex, false);
+                }
+              }, 200);
+            }
           };
           
           lenis.on('scroll', handleScroll);
@@ -472,8 +495,8 @@ export function ArchiveGallery() {
             
             // TANGKAP MOMENTUM AWAL: Jika user scroll dengan sengaja, langsung potong
             // momentumnya dan arahkan HANYA ke 1 panel berikutnya.
-            // e.velocity di Lenis cukup sensitif. Angka 0.5 cukup untuk mendeteksi scroll disengaja
-            if (Math.abs(e.velocity) > 0.5) {
+            // Ambang batas sangat rendah (0.05) agar scroll sedikit saja langsung pindah panel
+            if (Math.abs(e.velocity) > 0.05) {
               if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
               
               const step = e.velocity > 0 ? 1 : -1;
@@ -574,8 +597,8 @@ export function ArchiveGallery() {
       <div
         ref={containerRef}
         style={{
-          // Diubah menjadi 350vh agar scroll antar panel terasa SANGAT jauh lebih ringan dan lambat (membutuhkan lebih banyak scroll untuk bergeser)
-          height: `${(totalSteps + 4) * 350}vh` 
+          // Diubah menjadi 150vh (sebelumnya 350vh) agar jarak native scroll jauh lebih masuk akal, mencegah rasa 'jauh sekali'
+          height: `${(totalSteps + 4) * 150}vh` 
         }}
         className="relative w-full"
       >
@@ -733,7 +756,7 @@ export function ArchiveGallery() {
             }}
           >
             {/* Static UI for Active Project Description (Kanan Tengah - WALL PHASE) */}
-            <div className="absolute top-1/2 -translate-y-1/2 right-6 md:right-12 lg:right-24 pointer-events-auto flex flex-col items-end text-right w-[90%] md:w-[600px] scale-75 sm:scale-90 xl:scale-100 origin-right">
+            <div className="absolute bottom-8 md:bottom-auto md:top-1/2 md:-translate-y-1/2 left-6 md:left-auto right-6 md:right-12 lg:right-24 pointer-events-auto flex flex-col items-start md:items-end text-left md:text-right w-auto md:w-[600px] scale-90 md:scale-100 origin-bottom-left md:origin-right z-20">
               <AnimatePresence mode="popLayout">
                 <motion.div
                   key={activeItem.id}
@@ -742,14 +765,14 @@ export function ArchiveGallery() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
                   style={{ willChange: "transform, opacity" }}
-                  className="flex flex-col items-end"
+                  className="flex flex-col items-start md:items-end"
                 >
-                  <div className="flex w-full justify-between items-start pl-8 md:pl-20">
+                  <div className="flex w-full justify-between items-start pl-0 md:pl-20">
                     {/* Main Content Area */}
                     <div className="flex flex-col items-start text-left flex-1 max-w-2xl">
                       
                       {/* Chapter Header */}
-                      <div className={`flex items-center gap-3 md:gap-4 ${activeItem.themeColor || 'text-white'} mb-3 md:mb-6`}>
+                      <div className={`hidden md:flex items-center gap-3 md:gap-4 ${activeItem.themeColor || 'text-white'} mb-3 md:mb-6`}>
                         <span className="font-mono text-sm tracking-widest uppercase font-bold">
                           CHAPTER {activeItem.id}
                         </span>
@@ -763,38 +786,38 @@ export function ArchiveGallery() {
                         <img 
                           src="/images/fonts/CAPTAINAMERICAFONT.png" 
                           alt="CAPTAIN AMERICA X NEXT.JS" 
-                          className="h-10 md:h-12 lg:h-16 mb-4 md:mb-6 object-contain drop-shadow-2xl origin-left" 
+                          className="h-8 md:h-12 lg:h-16 mb-2 md:mb-6 object-contain drop-shadow-2xl origin-left" 
                         />
                       ) : activeItem.wallTitle === "IRONMAN X VS CODE" ? (
                         <img 
                           src="/images/fonts/IRONMANFONT.png" 
                           alt="IRONMAN X VS CODE" 
-                          className="h-10 md:h-12 lg:h-16 mb-4 md:mb-6 object-contain drop-shadow-2xl origin-left" 
+                          className="h-8 md:h-12 lg:h-16 mb-2 md:mb-6 object-contain drop-shadow-2xl origin-left" 
                         />
                       ) : activeItem.wallTitle === "SPIDERMAN X TAILWIND CSS" ? (
                         <img 
                           src="/images/fonts/SPIDERMANFONT.png" 
                           alt="SPIDERMAN X TAILWIND CSS" 
-                          className="h-10 md:h-12 lg:h-16 mb-4 md:mb-6 object-contain drop-shadow-2xl origin-left" 
+                          className="h-8 md:h-12 lg:h-16 mb-2 md:mb-6 object-contain drop-shadow-2xl origin-left" 
                         />
                       ) : (
-                        <h3 className="font-bold mb-6 uppercase tracking-widest leading-none drop-shadow-2xl text-4xl md:text-5xl lg:text-7xl font-syne text-white shadow-black">
+                        <h3 className="font-bold mb-2 md:mb-6 uppercase tracking-widest leading-none drop-shadow-2xl text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-syne text-white shadow-black">
                           {activeItem.wallTitle || activeItem.title}
                         </h3>
                       )}
 
                       {/* Subtitle */}
-                      <div className={`flex items-center gap-3 md:gap-4 ${activeItem.themeColor || 'text-white'} mb-5 md:mb-8`}>
-                        <div className="w-8 h-[1px] bg-current" />
-                        <span className="font-mono tracking-[0.2em] uppercase text-sm font-bold">
+                      <div className={`flex items-center gap-2 md:gap-4 ${activeItem.themeColor || 'text-white'} mb-3 md:mb-8`}>
+                        <div className="hidden md:block w-8 h-[1px] bg-current" />
+                        <span className="font-mono tracking-[0.1em] md:tracking-[0.2em] uppercase text-[10px] md:text-sm font-bold">
                           {activeItem.wallType || activeItem.type}
                         </span>
                       </div>
 
                       {/* Description Block */}
-                      <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-4 md:mb-6 items-start md:items-stretch">
+                      <div className="flex flex-col md:flex-row gap-3 md:gap-6 mb-3 md:mb-6 items-start md:items-stretch">
                         {/* Hexagon Icon */}
-                        <div className="relative w-12 h-12 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0">
+                        <div className="hidden md:flex relative w-12 h-12 md:w-16 md:h-16 items-center justify-center flex-shrink-0">
                           <svg viewBox="0 0 100 100" className={`absolute inset-0 w-full h-full ${activeItem.themeColor || 'text-white'} opacity-80`} fill="none" stroke="currentColor" strokeWidth="2">
                             <polygon points="50 3, 93 25, 93 75, 50 97, 7 75, 7 25" />
                           </svg>
@@ -809,14 +832,14 @@ export function ArchiveGallery() {
                         <div className="hidden md:block w-[1px] bg-white/20 self-stretch" />
                         
                         {/* Text */}
-                        <div className="text-xs md:text-[13px] text-white/80 leading-relaxed whitespace-pre-wrap">
+                        <div className="text-[10px] sm:text-[11px] md:text-[13px] text-white/80 md:text-white/80 leading-relaxed whitespace-pre-wrap max-w-sm md:max-w-none drop-shadow-md">
                           {activeItem.wallDesc || activeItem.desc}
                         </div>
                       </div>
 
                       {/* Quote Block */}
                       {activeItem.quote && (
-                        <div className="flex gap-3 md:gap-4 mt-2">
+                        <div className="hidden md:flex gap-3 md:gap-4 mt-2">
                           <span className={`text-4xl md:text-5xl font-serif ${activeItem.themeColor || 'text-white'} opacity-30 leading-none mt-1`}>
                             "
                           </span>
@@ -833,7 +856,7 @@ export function ArchiveGallery() {
                     </div>
 
                     {/* Pagination Side Bar */}
-                    <div className="flex flex-col items-center justify-between h-[250px] md:h-[300px] font-mono text-white/50 ml-6 md:ml-12 border-l border-white/10 pl-4 md:pl-6 py-2">
+                    <div className="hidden md:flex flex-col items-center justify-between h-[250px] md:h-[300px] font-mono text-white/50 ml-6 md:ml-12 border-l border-white/10 pl-4 md:pl-6 py-2">
                       <span className="text-xs md:text-[10px] font-bold tracking-widest">01</span>
                       <div className="flex flex-col items-center gap-6 my-4 flex-1 justify-center">
                         {HERO_PROCESS_ITEMS.map((_, i) => (
