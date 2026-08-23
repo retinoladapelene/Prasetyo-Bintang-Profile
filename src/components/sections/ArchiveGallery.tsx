@@ -260,7 +260,7 @@ export function ArchiveGallery() {
   // Adding a spring on top of a smooth GSAP animation causes them to fight (lag and overshoot),
   // which makes the rotation feel choppy (patah-patah).
   const smoothProgress = scrollYProgress;
-  const cinematicProgress = useMotionValue(0); // Driven by CylinderGalleryScene's speed-limited WebGL loop
+  const cinematicProgress = scrollYProgress; // DECOUPLED FROM THREE.JS: now directly uses smooth Framer Motion scroll
   const PADDING_START = 5;
   const PADDING_END = 4;
   const totalSteps = (galleryItems.length - 1) + PADDING_START + PADDING_END;
@@ -873,8 +873,7 @@ export function ArchiveGallery() {
             <CylinderGalleryScene
               items={galleryItems}
               wallItems={HERO_PROCESS_ITEMS}
-              smoothProgress={smoothProgress}
-              cinematicProgress={cinematicProgress}
+              smoothProgress={cinematicProgress}
               onActiveIndexChange={setActiveIndex}
               onAvatarReady={setIsAvatarReady}
               className="w-full h-full"

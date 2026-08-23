@@ -101,7 +101,6 @@ interface CylinderGallerySceneProps {
   items: Array<any>;
   wallItems?: Array<any>;
   smoothProgress: MotionValue<number>;
-  cinematicProgress?: MotionValue<number>;
   className?: string;
   onActiveIndexChange?: (index: number) => void;
   onAvatarReady?: (isReady: boolean) => void;
@@ -170,7 +169,7 @@ const generateEnvironmentMap = (renderer: THREE.WebGLRenderer) => {
 
 
 
-export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinematicProgress, className, onActiveIndexChange, onAvatarReady, activeThemeId, onThemeChange }: CylinderGallerySceneProps) {
+export function CylinderGalleryScene({ items, wallItems, smoothProgress, className, onActiveIndexChange, onAvatarReady, activeThemeId, onThemeChange }: CylinderGallerySceneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef({
@@ -371,7 +370,12 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
                   mat.toneMapped = false;
                 }
 
-                mat.transparent = true;
+                // OPTIMASI: Hanya set transparent untuk bagian kaca/visor.
+                // Jika semuanya dipaksa transparent, GPU mobile akan sangat berat akibat overdraw.
+                if (isVisorOrGlass) {
+                  mat.transparent = true;
+                }
+                
                 mat.opacity = 1; // Used to be 0, but NanoAssembly handles visibility via shader discard now
                 mat.needsUpdate = true;
               });
@@ -595,7 +599,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
         }
       `,
       fragmentShader: `
-        ${isMobile ? '#define IS_MOBILE\\n' : ''}
+        ${isMobile ? '#define IS_MOBILE\n' : ''}
         uniform sampler2D uTexture;
         uniform float uOpacity;
         uniform float uShift;
@@ -821,9 +825,9 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
       video.loop = true;
       video.muted = true;
       video.playsInline = true;
-      video.autoplay = true;
+      video.autoplay = !isMobile;
       video.crossOrigin = "anonymous";
-      video.preload = "auto";
+      video.preload = isMobile ? "none" : "auto";
 
       // Mencegah browser (Chrome/Safari) mematikan atau melimit FPS video (throttling).
       // Video HARUS dimasukkan ke dalam DOM dan tidak boleh memiliki opacity 0 atau ukuran 1x1.
@@ -850,23 +854,38 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
       videoTexture.wrapS = THREE.RepeatWrapping;
       videoTexture.wrapT = THREE.ClampToEdgeWrapping;
 
-      const p = video.play();
-      if (p !== undefined) {
-        (video as any)._playPromise = p;
-        p.catch(() => {
-          const playOnGesture = () => {
-            const p2 = video.play();
-            if (p2 !== undefined) {
-              (video as any)._playPromise = p2;
-              p2.finally(() => {
-                window.removeEventListener("pointerdown", playOnGesture);
-                window.removeEventListener("scroll", playOnGesture);
-              });
-            }
-          };
-          window.addEventListener("pointerdown", playOnGesture, { once: true });
-          window.addEventListener("scroll", playOnGesture, { once: true, passive: true });
-        });
+      if (!isMobile) {
+        const p = video.play();
+        if (p !== undefined) {
+          (video as any)._playPromise = p;
+          p.catch(() => {
+            const playOnGesture = () => {
+              const p2 = video.play();
+              if (p2 !== undefined) {
+                (video as any)._playPromise = p2;
+                p2.finally(() => {
+                  window.removeEventListener("pointerdown", playOnGesture);
+                  window.removeEventListener("scroll", playOnGesture);
+                });
+              }
+            };
+            window.addEventListener("pointerdown", playOnGesture, { once: true });
+            window.addEventListener("scroll", playOnGesture, { once: true, passive: true });
+          });
+        }
+      } else {
+        const warmUpVideo = () => {
+           const p = video.play();
+           if (p !== undefined) {
+               (video as any)._playPromise = p;
+               p.then(() => { video.pause(); }).catch(() => {}).finally(() => {
+                   window.removeEventListener("pointerdown", warmUpVideo);
+                   window.removeEventListener("touchstart", warmUpVideo);
+               });
+           }
+        };
+        window.addEventListener("pointerdown", warmUpVideo, { once: true });
+        window.addEventListener("touchstart", warmUpVideo, { once: true });
       }
 
       videoTextureCache[url] = videoTexture;
@@ -1049,8 +1068,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
 
     // ── Create Text Mesh for Cinematic Transition ──
     const textCanvas = document.createElement('canvas');
-    textCanvas.width = 4096;
-    textCanvas.height = 2048;
+    textCanvas.width = 1536;
+    textCanvas.height = 768;
     const textCtx = textCanvas.getContext('2d')!;
     if (textCtx) {
       textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
@@ -1073,15 +1092,15 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
       textCtx.shadowOffsetX = 0;
       textCtx.shadowOffsetY = 0;
       
-      textCtx.fillText('T H E   W O R K F L O W', 2048, 1024 - 60);
+      textCtx.fillText('T H E   W O R K F L O W', 768, 384 - 60);
 
       // Reset shadow for subsequent elements
       textCtx.shadowBlur = 0;
       
       // Minimalist Separator Line
       textCtx.beginPath();
-      textCtx.moveTo(2048 - 80, 1024 + 50);
-      textCtx.lineTo(2048 + 80, 1024 + 50);
+      textCtx.moveTo(768 - 80, 384 + 50);
+      textCtx.lineTo(768 + 80, 384 + 50);
       textCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
       textCtx.lineWidth = 2;
       textCtx.stroke();
@@ -1092,15 +1111,12 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
       }
       textCtx.font = '400 45px "Inter", "Outfit", sans-serif';
       textCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-      textCtx.fillText('C R E A T I V E   P R O C E S S', 2048, 1024 + 140);
+      textCtx.fillText('C R E A T I V E   P R O C E S S', 768, 384 + 140);
     }
     
     const textTex = new THREE.CanvasTexture(textCanvas);
     textTex.minFilter = THREE.LinearMipmapLinearFilter;
     textTex.magFilter = THREE.LinearFilter;
-    if (state.renderer) {
-      textTex.anisotropy = state.renderer.capabilities.getMaxAnisotropy();
-    }
     
     // Instead of a custom vertex shader that goes to a flat wall, 
     // we use the exact same morphing logic as the background (J-Curve).
@@ -1602,21 +1618,11 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
       // ── HUD RETINA SCANNER ANIMATION ──(Disabled to remove 3D depth effect on background)
       camera.position.x = 0;
       camera.position.y = 0;
-      camera.lookAt(0, 0, 0); // Keep looking at the center
 
       // ── DIRECT LERP SYNC WITH LENIS (STUTTER-FREE OPTIMIZATION) ──
-      // Lenis + GSAP sudah memberikan easing scroll yang sangat halus (duration 0.8s di scrollTo).
-      // Menggunakan pegas (spring) untuk mengejar nilai yang sudah di-easing akan menyebabkan bentrok
-      // fisika (stuttering/patah-patah) karena spring tertinggal lalu ngebut.
-      // Solusinya: Kita ikat (bind) rotasi 3D langsung ke scrollProgress dengan Lerp ringan.
-      // Ini 100% mulus dan sangat ringan untuk CPU/GPU.
-      const lerpFactor = 1.8; // Diturunkan ke 1.8 agar pergerakan panel sangat lambat, halus, dan gentle
-      smoothedScroll = THREE.MathUtils.lerp(smoothedScroll, state.scrollProgress, dt * lerpFactor);
-
-      // Export the smoothly clamped scroll progress back to React HTML UI
-      if (cinematicProgress) {
-        cinematicProgress.set(smoothedScroll);
-      }
+      // Gunakan Frame-Rate Independent Lerp agar kecepatan scroll 3D tidak patah-patah saat FPS turun di Mobile
+      const damping = 7.0; 
+      smoothedScroll = THREE.MathUtils.lerp(smoothedScroll, state.scrollProgress, 1 - Math.exp(-damping * dt));
 
       // Optimization handled at top of animate loop
 
@@ -1782,10 +1788,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, cinemat
       const flatMorph = Math.min(Math.max((smoothedScroll - 0.975) / 0.010, 0), 1);
 
       // Sembunyikan HTML overlay interaktif karena Panel 5 tidak lagi menjadi fullscreen
-      if (overlayRef.current) {
-        overlayRef.current.style.opacity = '0';
-        overlayRef.current.style.pointerEvents = 'none';
-      }
+      // Dipindahkan ke init untuk menghindari DOM writes di RAF
 
       if (state.wallPanels.length > 0) {
         // Menggunakan konstanta dari konfigurasi di atas

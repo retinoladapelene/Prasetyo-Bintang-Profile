@@ -72,7 +72,6 @@ export class NanoAssemblyController {
         const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
         
         materials.forEach(mat => {
-          mat.transparent = true; 
           mat.depthWrite = true; // Still write depth to avoid weird sorting issues if mostly opaque
 
           mat.onBeforeCompile = (shader) => {
