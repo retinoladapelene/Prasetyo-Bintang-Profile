@@ -80,7 +80,7 @@ export async function POST(req: Request) {
           { role: 'user', content: message }
         ],
         temperature: 0.7,
-        max_tokens: 1024,
+        max_tokens: 1536,
       }),
     });
 
