@@ -499,17 +499,20 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
     keyLight.position.set(4, 3, 8);
     scene.add(keyLight);
 
+    let rimLeft: THREE.DirectionalLight | undefined;
+    let rimRight: THREE.DirectionalLight | undefined;
+
     if (!isMobile) {
       const fillLight = new THREE.DirectionalLight("#aaddff", 1.2);
       fillLight.position.set(-6, 0, 6);
       scene.add(fillLight);
 
       // Cahaya dari belakang (TV screen) sangat terang menyinari pinggiran avatar
-      const rimLeft = new THREE.DirectionalLight("#ffffff", 4.5);
+      rimLeft = new THREE.DirectionalLight("#ffffff", 4.5);
       rimLeft.position.set(-8, 2, -10);
       scene.add(rimLeft);
 
-      const rimRight = new THREE.DirectionalLight("#aaddff", 4.5);
+      rimRight = new THREE.DirectionalLight("#aaddff", 4.5);
       rimRight.position.set(8, 2, -10);
       scene.add(rimRight);
     }
@@ -1421,8 +1424,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
         const computedPrimary = getComputedStyle(document.documentElement).getPropertyValue("--theme-primary").trim();
         if (computedPrimary) {
           try {
-            rimLeft.color.set(computedPrimary);
-            rimRight.color.set(computedPrimary);
+            if (rimLeft) rimLeft.color.set(computedPrimary);
+            if (rimRight) rimRight.color.set(computedPrimary);
             if (state.scannerMat) {
               state.scannerMat.uniforms.uColor.value.set(computedPrimary);
             }
