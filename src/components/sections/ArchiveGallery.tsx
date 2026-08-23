@@ -377,7 +377,13 @@ export function ArchiveGallery() {
           targetScrollY = st.start + (st.end - st.start) * targetProgress;
         } else {
           // Fase J-Curve Wall Panels (Background Melengkung)
-          if (idx >= HERO_PROCESS_ITEMS.length) {
+          if (idx === -1) {
+            // Snap back to the last Carousel item (keluar dari J-Curve Wall, kembali ke Carousel)
+            const lastCarouselIdx = galleryItems.length - 1;
+            const totalSteps = lastCarouselIdx + PADDING_START + PADDING_END;
+            const targetProgress = (PADDING_START + lastCarouselIdx) / totalSteps;
+            targetScrollY = st.start + (st.end - st.start) * targetProgress;
+          } else if (idx >= HERO_PROCESS_ITEMS.length) {
             // Index 5 = IMAX Flat screen fully achieved
             // Snap ke 0.990 (tengah-tengah fase idle IMAX) agar layar IMAX bisa dinikmati lebih lama sebelum blackout
             targetScrollY = st.start + (st.end - st.start) * 0.990; 
@@ -471,24 +477,8 @@ export function ArchiveGallery() {
           
         } else {
           // Fase J-Curve Wall Panels (Background Melengkung)
-          const diff = activeIndex - clampedWallIndex;
-          
-          if (diff !== 0 && !isSnappingRef.current) {
-            // Batasi perpindahan maksimal 1 panel ke depan atau ke belakang
-            const step = diff > 0 ? 1 : -1;
-            const newIndex = clampedWallIndex + step;
-            
-            const maxIndex = HERO_PROCESS_ITEMS.length; // Index 5 is IMAX
-            const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
-            
-            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-            setClampedWallIndex(clampedNewIndex); 
-            
-            // Langsung kunci dan snap agar scroll kencang tidak bablas
-            if (clampedNewIndex >= 0) {
-              doSnap(clampedNewIndex, true);
-            }
-          }
+          // Menghapus logika sinkronisasi 'diff' karena activeIndex hanya untuk Carousel, 
+          // sehingga mencegah paksaan pindah ke Iron Man saat berada di Doctor Strange.
 
           const handleScroll = (e: any) => {
             if (isSnappingRef.current || !isWallPanel) return;
@@ -506,15 +496,14 @@ export function ArchiveGallery() {
               
               if (clampedNewIndex !== clampedWallIndex) {
                 setClampedWallIndex(clampedNewIndex);
-                if (clampedNewIndex >= 0) {
-                  doSnap(clampedNewIndex, true);
-                }
+                // Selalu panggil doSnap, termasuk untuk -1 agar bisa snap kembali ke Carousel
+                doSnap(clampedNewIndex, true);
               }
             } else {
               if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
               scrollTimeoutRef.current = setTimeout(() => {
                 // Snap ke tengah panel saat ini jika user berhenti scroll di posisi nanggung
-                if (clampedWallIndex >= 0) {
+                if (clampedWallIndex >= -1) {
                   doSnap(clampedWallIndex, true);
                 }
               }, 200);
