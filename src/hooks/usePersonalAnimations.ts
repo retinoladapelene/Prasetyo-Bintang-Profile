@@ -168,18 +168,18 @@ export function usePersonalAnimations({
         0.45
       );
 
-      // 0.50 to 0.78: SLIDE UP & REVEAL (Extremely lightweight for GPU)
+      // 0.50 to 0.75: SLIDE UP & REVEAL (Extremely lightweight for GPU)
       // We translate the entire hero container UP out of the viewport.
       tl.to(
         imageRef.current,
-        { yPercent: -120, ease: "power2.inOut", duration: 0.28, force3D: true },
+        { yPercent: -120, ease: "power2.inOut", duration: 0.25, force3D: true },
         0.50
       );
 
       // We fade out the contents simultaneously so it cleanly disappears into the background
       tl.to(
         ["#card-inner-contents", "#transition-text", "#marquee-container"],
-        { autoAlpha: 0, ease: "power2.inOut", duration: 0.20, force3D: true },
+        { autoAlpha: 0, ease: "power2.inOut", duration: 0.18, force3D: true },
         0.50
       );
 
@@ -187,7 +187,7 @@ export function usePersonalAnimations({
       tl.to(
         "#sticky-transition",
         { pointerEvents: "none", autoAlpha: 0, duration: 0.03 },
-        0.77
+        0.74
       );
 
       // Fade in the Profile 3D Tube background seamlessly as the zoom completes

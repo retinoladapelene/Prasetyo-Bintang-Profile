@@ -116,11 +116,11 @@ export default function PersonalPage() {
 
         <div className="relative -mt-[100vh]">
           <EditorialIntro mounted={mounted && !isLoading} currentTime={currentTime} />
-          <section className="relative h-[1400vh] w-full overflow-hidden bg-transparent" />
+          <section className="relative h-[1000vh] w-full overflow-hidden bg-transparent" />
         </div>
       </div>
 
-      <div ref={galleryRef} className="relative z-20 w-full -mt-[320vh]">
+      <div ref={galleryRef} className="relative z-20 w-full -mt-[350vh]">
         <ArchiveGallery />
       </div>
 
