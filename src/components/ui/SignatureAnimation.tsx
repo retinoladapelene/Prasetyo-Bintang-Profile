@@ -30,17 +30,17 @@ export function SignatureAnimation({
   const activeProgress = progress || defaultProgress;
 
   // Sequential drawing saat terikat ke progress (Loading Screen & animasi Zoom Out Card)
-  const stroke0Progress = useTransform(activeProgress, [0, 0.38], [0, 1]);
-  const stroke0Opacity = useTransform(activeProgress, [0, 0.01], [0, 1]);
+  const stroke0Progress = useTransform(activeProgress, [0, 0.38], [0.001, 1]);
+  const stroke0Opacity = useTransform(activeProgress, [0, 0.01], [0.001, 1]);
 
-  const stroke1Progress = useTransform(activeProgress, [0.32, 0.72], [0, 1]);
-  const stroke1Opacity = useTransform(activeProgress, [0, 0.32, 0.33], [0, 0, 1]);
+  const stroke1Progress = useTransform(activeProgress, [0.32, 0.72], [0.001, 1]);
+  const stroke1Opacity = useTransform(activeProgress, [0, 0.32, 0.33], [0.001, 0.001, 1]);
 
-  const stroke2Progress = useTransform(activeProgress, [0.65, 1], [0, 1]);
-  const stroke2Opacity = useTransform(activeProgress, [0, 0.65, 0.66], [0, 0, 1]);
+  const stroke2Progress = useTransform(activeProgress, [0.65, 1], [0.001, 1]);
+  const stroke2Opacity = useTransform(activeProgress, [0, 0.65, 0.66], [0.001, 0.001, 1]);
 
   // Sembunyikan SVG sepenuhnya pada saat progress = 0 untuk menghindari titik bulat (round cap)
-  const svgOpacity = useTransform(activeProgress, [0, 0.005, 1], [0, 1, 1]);
+  const svgOpacity = useTransform(activeProgress, [0, 0.005, 1], [0.001, 1, 1]);
 
   return (
     <div className={`pointer-events-none ${className}`}>
@@ -62,7 +62,7 @@ export function SignatureAnimation({
           strokeWidth="40"
           strokeLinecap="round"
           variants={progress ? undefined : pathVariants}
-          initial={progress ? { pathLength: 0, opacity: 0 } : undefined}
+          initial={progress ? { pathLength: 0.001, opacity: 0.001 } : undefined}
           style={progress ? { pathLength: stroke0Progress, opacity: stroke0Opacity } : {}}
           custom={0}
         />
@@ -72,7 +72,7 @@ export function SignatureAnimation({
           strokeWidth="40"
           strokeLinecap="round"
           variants={progress ? undefined : pathVariants}
-          initial={progress ? { pathLength: 0, opacity: 0 } : undefined}
+          initial={progress ? { pathLength: 0.001, opacity: 0.001 } : undefined}
           style={progress ? { pathLength: stroke1Progress, opacity: stroke1Opacity } : {}}
           custom={1}
         />
@@ -82,7 +82,7 @@ export function SignatureAnimation({
           strokeWidth="40"
           strokeLinecap="round"
           variants={progress ? undefined : pathVariants}
-          initial={progress ? { pathLength: 0, opacity: 0 } : undefined}
+          initial={progress ? { pathLength: 0.001, opacity: 0.001 } : undefined}
           style={progress ? { pathLength: stroke2Progress, opacity: stroke2Opacity } : {}}
           custom={2}
         />

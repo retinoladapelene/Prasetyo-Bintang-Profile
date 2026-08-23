@@ -38,31 +38,29 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
       {/* Background Marquee */}
       <div
         id="marquee-container"
-        className="absolute inset-0 z-0 flex flex-col justify-center gap-0 select-none overflow-hidden pointer-events-none opacity-0"
-        style={{ willChange: "opacity, transform", transform: "translateZ(0)" }}
+        className="absolute inset-0 z-0 flex flex-col justify-center gap-0 select-none overflow-hidden pointer-events-none"
+        style={{ opacity: 0.001, willChange: "opacity", transform: "translateZ(0)" }}
       >
-        <motion.div
-          animate={{ x: [0, -1000] }}
-          transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
-          className="flex whitespace-nowrap"
+        <div
+          className="flex whitespace-nowrap animate-marquee-left"
+          style={{ willChange: "transform", transform: "translateZ(0)" }}
         >
           {[1, 2, 3, 4].map((i) => (
             <h2 key={`mq-1-${i}`} className="font-syne text-[10vw] font-black tracking-tighter px-8 leading-[0.8]" style={{ color: 'var(--theme-primary)' }}>
               WEB DEVELOPMENT • DATA ANALYSIS • UI/UX DESIGN • 
             </h2>
           ))}
-        </motion.div>
-        <motion.div
-          animate={{ x: [-1000, 0] }}
-          transition={{ repeat: Infinity, duration: 50, ease: "linear" }}
-          className="flex whitespace-nowrap"
+        </div>
+        <div
+          className="flex whitespace-nowrap animate-marquee-right"
+          style={{ willChange: "transform", transform: "translateZ(0)" }}
         >
           {[1, 2, 3, 4].map((i) => (
             <h2 key={`mq-2-${i}`} className="font-syne text-[10vw] font-black tracking-tighter px-8 leading-[0.8]" style={{ color: 'var(--theme-primary)' }}>
               TRANSFORMING DATA INTO INSIGHTS • BUILDING SCALABLE APPS • 
             </h2>
           ))}
-        </motion.div>
+        </div>
       </div>
 
       <div
@@ -75,8 +73,9 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
         <div className="relative z-10 flex flex-col items-center justify-end h-full w-full pb-0">
           <div
             id="transition-text"
-            className="w-full max-w-6xl opacity-0 relative mb-6 md:mb-8 flex flex-row justify-between items-end z-20 px-6 md:px-12"
+            className="w-full max-w-6xl relative mb-6 md:mb-8 flex flex-row justify-between items-end z-20 px-6 md:px-12"
             style={{
+              opacity: 0.001,
               transform: 'translateZ(0)',
               willChange: 'transform, opacity'
             }}
@@ -128,8 +127,8 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
 
                 <div
                   id="reveal-name-back"
-                  className="absolute inset-0 -z-10 flex flex-col justify-end items-center opacity-0 pointer-events-none select-none pb-[7.5vw] md:pb-[10vw]"
-                  style={{ willChange: 'opacity, transform', transform: 'translateZ(0)' }}
+                  className="absolute inset-0 -z-10 flex flex-col justify-end items-center pointer-events-none select-none pb-[7.5vw] md:pb-[10vw]"
+                  style={{ opacity: 0.001, willChange: 'opacity, transform', transform: 'translateZ(0)' }}
                 >
                   <h2 className="font-outfit font-black text-[11vw] md:text-[14.5vw] leading-[0.7] text-[var(--foreground)] tracking-tighter uppercase scale-y-105 origin-bottom">
                     PRASETYO
@@ -138,8 +137,8 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
 
                 <div
                   id="reveal-name-front"
-                  className="absolute inset-0 z-50 flex flex-col justify-end items-center opacity-0 pointer-events-none select-none pb-0"
-                  style={{ willChange: 'opacity, transform', transform: 'translateZ(0)' }}
+                  className="absolute inset-0 z-50 flex flex-col justify-end items-center pointer-events-none select-none pb-0"
+                  style={{ opacity: 0.001, willChange: 'opacity, transform', transform: 'translateZ(0)' }}
                 >
                   <h2 className="font-outfit font-black text-[11vw] md:text-[14.5vw] leading-[0.7] text-[var(--foreground)] tracking-tighter uppercase scale-y-105 origin-bottom">
                     BINTANG
@@ -151,7 +150,8 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
             {/* Side labels */}
             <div
               id="side-label-left"
-              className="absolute -left-12 md:-left-20 top-1/2 -translate-y-1/2 hidden md:flex flex-col items-center gap-6 pointer-events-none opacity-0"
+              className="absolute -left-12 md:-left-20 top-1/2 -translate-y-1/2 hidden md:flex flex-col items-center gap-6 pointer-events-none"
+              style={{ opacity: 0.001 }}
             >
               <div className="h-16 w-[1px]" style={{ background: 'var(--theme-dot)' }} />
               <div className="font-outfit text-[11px] md:text-[13px] font-bold uppercase tracking-[0.6em]" style={{ color: 'var(--theme-primary)', writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
@@ -162,7 +162,8 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
 
             <div
               id="side-label-right"
-              className="absolute -right-12 md:-right-20 top-1/2 -translate-y-1/2 hidden md:flex flex-col items-center gap-6 pointer-events-none opacity-0"
+              className="absolute -right-12 md:-right-20 top-1/2 -translate-y-1/2 hidden md:flex flex-col items-center gap-6 pointer-events-none"
+              style={{ opacity: 0.001 }}
             >
               <div className="h-16 w-[1px]" style={{ background: 'var(--theme-dot)' }} />
               <div className="font-outfit text-[11px] md:text-[13px] font-bold uppercase tracking-[0.6em]" style={{ color: 'var(--theme-primary)', writingMode: 'vertical-rl' }}>

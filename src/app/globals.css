@@ -75,6 +75,26 @@ html, body, * {
   66% { transform: translate(3vw, -3vh) scale(1.1); }
 }
 
+@keyframes marquee-left {
+  0% { transform: translateX(0) translateZ(0); }
+  100% { transform: translateX(-100%) translateZ(0); }
+}
+
+@keyframes marquee-right {
+  0% { transform: translateX(-100%) translateZ(0); }
+  100% { transform: translateX(0) translateZ(0); }
+}
+
+.animate-marquee-left {
+  animation: marquee-left 40s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-right {
+  animation: marquee-right 50s linear infinite;
+  will-change: transform;
+}
+
 .theme-web {
   filter: invert(100%);
 }

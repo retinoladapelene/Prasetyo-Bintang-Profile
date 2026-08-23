@@ -345,7 +345,7 @@ export function InteractivePhoto({ settings }: { settings: any }) {
           />
         </div>
 
-        <div id="full-color-layer" className="absolute inset-0 z-25 opacity-0 select-none overflow-hidden pointer-events-none" style={{ transform: "translateZ(5px)", willChange: "transform, opacity" }}>
+        <div id="full-color-layer" className="absolute inset-0 z-25 select-none overflow-hidden pointer-events-none" style={{ opacity: 0.001, transform: "translateZ(5px)", willChange: "transform, opacity" }}>
           <Image
             src={maskPhoto}
             alt="Personal Photo Full Color"
