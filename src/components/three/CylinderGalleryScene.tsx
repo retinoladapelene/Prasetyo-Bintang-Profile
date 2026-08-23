@@ -321,8 +321,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
         loadedModel.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
+            mesh.castShadow = !isMobile;
+            mesh.receiveShadow = !isMobile;
             mesh.renderOrder = 1; // Guarantee 3D Avatar renders BEFORE front gallery panels!
 
             // Ensure normals exist for lighting
@@ -499,18 +499,20 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
     keyLight.position.set(4, 3, 8);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight("#aaddff", 1.2);
-    fillLight.position.set(-6, 0, 6);
-    scene.add(fillLight);
+    if (!isMobile) {
+      const fillLight = new THREE.DirectionalLight("#aaddff", 1.2);
+      fillLight.position.set(-6, 0, 6);
+      scene.add(fillLight);
 
-    // Cahaya dari belakang (TV screen) sangat terang menyinari pinggiran avatar
-    const rimLeft = new THREE.DirectionalLight("#ffffff", 4.5);
-    rimLeft.position.set(-8, 2, -10);
-    scene.add(rimLeft);
+      // Cahaya dari belakang (TV screen) sangat terang menyinari pinggiran avatar
+      const rimLeft = new THREE.DirectionalLight("#ffffff", 4.5);
+      rimLeft.position.set(-8, 2, -10);
+      scene.add(rimLeft);
 
-    const rimRight = new THREE.DirectionalLight("#aaddff", 4.5);
-    rimRight.position.set(8, 2, -10);
-    scene.add(rimRight);
+      const rimRight = new THREE.DirectionalLight("#aaddff", 4.5);
+      rimRight.position.set(8, 2, -10);
+      scene.add(rimRight);
+    }
 
     // 4. Create Carousel Group
     const carouselGroup = new THREE.Group();
@@ -527,7 +529,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
     state.bgGroup = bgGroup;
 
     const bgGeometry = new THREE.CylinderGeometry(
-      22, 22, 40, isMobile ? 48 : 128, isMobile ? 12 : 24, true,
+      22, 22, 40, isMobile ? 32 : 128, isMobile ? 8 : 24, true,
       0, Math.PI * 2
     );
 
@@ -902,7 +904,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
 
     // Create a shared geometry for all panels (lower poly on mobile)
     const geometry = new THREE.CylinderGeometry(
-      radius, radius, height, isMobile ? 16 : 32, 1, true,
+      radius, radius, height, isMobile ? 12 : 32, 1, true,
       -thetaLength / 2, thetaLength // Centered on Z axis
     );
 
@@ -1066,10 +1068,10 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
       }
     }
 
-    // ── Create Text Mesh for Cinematic Transition ──
+    // ✨ Create Text Mesh for Cinematic Transition ✨
     const textCanvas = document.createElement('canvas');
-    textCanvas.width = 1536;
-    textCanvas.height = 768;
+    textCanvas.width = isMobile ? 1024 : 1536;
+    textCanvas.height = isMobile ? 512 : 768;
     const textCtx = textCanvas.getContext('2d')!;
     if (textCtx) {
       textCtx.clearRect(0, 0, textCanvas.width, textCanvas.height);
