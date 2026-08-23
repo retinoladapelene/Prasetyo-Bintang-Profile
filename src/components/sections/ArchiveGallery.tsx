@@ -427,6 +427,12 @@ export function ArchiveGallery() {
             if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
             scrollTimeoutRef.current = setTimeout(() => {
               // Hanya snap JIKA user sudah benar-benar BERHENTI scroll (setelah 200ms agar lebih responsif)
+              
+              // Mencegah snap saat berada di fase Hero atau HUD (sebelum 0.35)
+              // Ini memungkinkan user berhenti scroll dan mengklik tombol "Ask me anything" tanpa terlempar ke panel pertama.
+              const currentProgress = cinematicProgress.get();
+              if (currentProgress < 0.35) return;
+
               if (clampedActiveIndex >= 0) {
                 doSnap(clampedActiveIndex, false);
               }
