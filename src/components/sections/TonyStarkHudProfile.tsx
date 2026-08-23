@@ -837,7 +837,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
               )}
 
               {!activeCategory && (
-                <div className="flex flex-col gap-4 pointer-events-auto">
+                <div className="flex flex-col gap-4">
                   <AnimatedHudElement
                     smoothProgress={combinedProgress}
                     enterRange={[0.188, 0.200]}
