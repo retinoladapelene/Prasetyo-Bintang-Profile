@@ -168,18 +168,18 @@ export function usePersonalAnimations({
         0.45
       );
 
-      // 0.50 to 0.78: GPU-accelerated zoom-in through the card
+      // 0.50 to 0.78: SLIDE UP & REVEAL (Extremely lightweight for GPU)
+      // We translate the entire hero container UP out of the viewport.
       tl.to(
         imageRef.current,
-        { scale: 2.1, ease: "power1.inOut", duration: 0.28, force3D: true, rotationZ: 0.01 },
+        { yPercent: -120, ease: "power2.inOut", duration: 0.28, force3D: true },
         0.50
       );
 
-      // FADE OUT & PERFECTLY COUNTER-SCALE the internal elements so they stay stationary!
-      // By fading the parent container directly, we bypass massive frame drops caused by fading multiple individual leaf elements.
+      // We fade out the contents simultaneously so it cleanly disappears into the background
       tl.to(
-        ["#card-inner-contents", "#transition-text"],
-        { scale: 0.476, autoAlpha: 0, transformOrigin: "center center", ease: "power1.inOut", duration: 0.28, force3D: true },
+        ["#card-inner-contents", "#transition-text", "#marquee-container"],
+        { autoAlpha: 0, ease: "power2.inOut", duration: 0.20, force3D: true },
         0.50
       );
 

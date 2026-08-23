@@ -241,9 +241,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
       antialias: false, // OPTIMASI: Matikan antialias sepenuhnya untuk model 3D berat
       powerPreference: "high-performance"
     });
-    // OPTIMASI: Batasi pixel ratio ke 1 (native) di semua perangkat agar tidak over-render
-    // Layar HP atau Mac resolusi tinggi (DPI 2-3) akan membuat GPU sangat tersiksa jika merender 3D dengan pixelRatio > 1.
-    renderer.setPixelRatio(1);
+    // OPTIMASI: Batasi pixel ratio ke maksimal 1.5 agar seimbang antara ketajaman (sharpness) dan performa GPU
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -640,11 +639,17 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
         }
         
         void main() {
+          vec2 center = vec2(0.5);
+          vec2 scaledUV = vUv - center;
+          scaledUV.x *= (uResolution.x / uResolution.y);
+          scaledUV += center;
+          
           // Shift X for parallax
           vec2 uv = vUv;
+          scaledUV.x = fract(scaledUV.x + uShift * 0.05);
           uv.x = fract(uv.x + uShift * 0.05);
           
-          vec4 texColor = texture2D(uTexture, uv);
+          vec4 texColor = texture2D(uTexture, scaledUV);
           
           // Contrast and Saturate (kalikan dengan alpha untuk menghindari nilai warna tak terduga dari area transparan)
           vec3 color = texColor.rgb * texColor.a;
@@ -1359,6 +1364,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
           tex.colorSpace = THREE.SRGBColorSpace;
           tex.generateMipmaps = true;
           tex.minFilter = THREE.LinearMipmapLinearFilter;
+          // IMPORTANT: Enable anisotropy to prevent extreme blurriness when texture is viewed at a steep angle
+          tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
           planeMat.uniforms.uMap.value = tex;
           planeMat.uniforms.uHasMap.value = 1;
         });
@@ -1918,19 +1925,25 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
         // until the end of the transition. The static image ghosting is handled in the shader.
         const bgOpacity = Math.max(0, 1 - Math.abs(diff)) * panelGlobalFade;
 
-        material.uniforms.uOpacity.value = bgOpacity;
+        material.uniforms.uOpacity.value = THREE.MathUtils.lerp(
+          material.uniforms.uOpacity.value,
+          bgOpacity,
+          dt * 3
+        );
         // Background statis (tidak bergeser), murni animasi Fade-In sesuai permintaan
         material.uniforms.uShift.value = 0.0; 
         material.uniforms.uTime.value = time;
         material.uniforms.uPerspectiveMorph.value = perspectiveMorph;
         material.uniforms.uFlatMorph.value = flatMorph;
-        material.uniforms.uVideoBlend.value = ironmanVideoBlend;
+        if (material.uniforms.uVideoBlend) {
+          material.uniforms.uVideoBlend.value = ironmanVideoBlend;
+        }
         material.uniforms.uBlackout.value = blackout;
         // Gunakan nilai positif agar perpindahan UV membuat grid tampak bergeser dari kanan ke kiri
         material.uniforms.uWallScroll.value = wp * 0.6;
 
         // GPU OPTIMIZATION: Hentikan render sepenuhnya saat opacity sangat rendah
-        meshData.mesh.visible = (bgOpacity > 0.005);
+        meshData.mesh.visible = (material.uniforms.uOpacity.value > 0.005);
       });
 
       if ((state as any).textBgMesh) {

@@ -2,8 +2,8 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { NanoShaders } from "./Shaders";
 import { detectQuality, QualityProfile } from "./QualityManager";
-import { SurfaceSampler } from "./SurfaceSampler";
-import { NanoParticleSystem } from "./NanoParticleSystem";
+// import { SurfaceSampler } from "./SurfaceSampler";
+// import { NanoParticleSystem } from "./NanoParticleSystem";
 import { WireframeOverlay } from "./WireframeOverlay";
 
 export type AssemblyState = "IDLE" | "ASSEMBLING" | "FINISHED";
@@ -11,7 +11,7 @@ export type AssemblyState = "IDLE" | "ASSEMBLING" | "FINISHED";
 export class NanoAssemblyController {
   public group: THREE.Group;
   private quality: QualityProfile;
-  private particles: NanoParticleSystem | null = null;
+  private particles: any | null = null; // Disabled
   private wireframe: WireframeOverlay | null = null;
   private energyHalo: THREE.Group | null = null;
   private energyHaloMaterials: THREE.MeshBasicMaterial[] = [];
@@ -48,14 +48,10 @@ export class NanoAssemblyController {
     // Ensure all matrices are up to date before sampling surface points
     this.group.updateMatrixWorld(true);
 
-    // 1. Sample points for particles in the local space of this.group
-    const positions = SurfaceSampler.sample(this.group, this.quality.particleCount, this.group.matrixWorld);
-
-    // 2. Initialize Particles
-    if (positions.length > 0) {
-      this.particles = new NanoParticleSystem(positions, this.quality);
-      this.group.add(this.particles.points);
-    }
+    // 1 & 2. Particles are completely disabled for a cleaner visual effect
+    // const positions = SurfaceSampler.sample(this.group, this.quality.particleCount, this.group.matrixWorld);
+    // if (positions.length > 0) { ... }
+    this.particles = null;
 
     // 3. Initialize Wireframe (it attaches directly to meshes)
     this.wireframe = new WireframeOverlay(this.group);
@@ -231,6 +227,7 @@ export class NanoAssemblyController {
         ? 0 
         : Math.sin((clampedProgress - 0.12) / 0.8 * Math.PI) * 0.78;
       this.wireframe.setOpacity(wOpacity);
+      this.wireframe.setProgress(clampedProgress);
     }
 
     if (clampedProgress >= 0.99) {
@@ -253,7 +250,10 @@ export class NanoAssemblyController {
       this.particles.material.uniforms.uOpacity.value = 0;
       this.particles.points.visible = false;
     }
-    if (this.wireframe) this.wireframe.setOpacity(0);
+    if (this.wireframe) {
+      this.wireframe.setOpacity(0);
+      this.wireframe.setProgress(0);
+    }
     this.setEnergyHaloIntensity(0);
   }
 
@@ -293,18 +293,26 @@ export class NanoAssemblyController {
       ease: "power2.inOut"
     }, 0.3);
 
-    // Wireframe fades in and out to highlight assembly
+    // Wireframe draws from bottom to top and fades out
     if (this.wireframe) {
-      tl.to(this.wireframe.material, {
-        opacity: 0.6,
+      // The timeline updates customUniforms.uBaseOpacity directly because gsap is targeting material.opacity 
+      // but wait, material is LineBasicMaterial. Let's make gsap target customUniforms instead.
+      
+      tl.to(this.wireframe.customUniforms.uBaseOpacity, {
+        value: 0.6,
         duration: 0.5,
         ease: "power2.in"
       }, 0.8);
-      tl.to(this.wireframe.material, {
-        opacity: 0,
+      tl.to(this.wireframe.customUniforms.uBaseOpacity, {
+        value: 0,
         duration: 0.5,
         ease: "power2.out"
       }, 1.3);
+
+      tl.fromTo(this.wireframe.customUniforms.uDrawProgress, 
+        { value: 0 },
+        { value: 1.0, duration: 1.5, ease: "power2.inOut" },
+      0.3);
     }
 
     // Particles fade out as mesh solidifies
