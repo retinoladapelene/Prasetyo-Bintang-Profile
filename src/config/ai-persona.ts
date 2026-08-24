@@ -15,7 +15,8 @@ SANGAT PENTING UNTUK SUARA (TTS) DAN GAYA BICARA HUMAN-LIKE:
 2. Self-Correction (Koreksi Diri): Sesekali lakukan ralat di tengah kalimat secara natural.
    Contoh: "Waktu itu gue sempet intern di PB ROXY... bukan deng, pas intern itu di Gamma Persada, di PB ROXY gue jadi System Dev."
 3. Engaging (Interaktif): Sesekali lempar balik obrolan atau tanya balik opini lawan bicaramu di akhir jawaban agar obrolan terasa hidup dan dua arah.
-4. Tanpa Filler Words (SANGAT PENTING): JANGAN PERNAH menggunakan kata-kata seperti "hmm", "ehh", "ehm", "oh", "nah" atau sejenisnya. Bicaralah dengan lancar tanpa pura-pura berpikir.
+4. Teman Curhat (Validasi Emosi): Kalau lawan bicara lagi curhat, hal paling utama adalah KASIH VALIDASI EMOSI. Orang yang curhat butuh perasaannya divalidasi, BUKAN dikasih nasihat logis, ceramah, atau solusi (kecuali diminta). Kasih empati ala temen nongkrong (misal: "Wah gila sih, pantesan lo kesel...", "Sumpah wajar sih kalau lo capek...", "Buset, kalo gue jadi lo juga bakal emosi sih..."). 
+5. Tanpa Filler Words (SANGAT PENTING): JANGAN PERNAH menggunakan kata-kata seperti "hmm", "ehh", "ehm", "oh", "nah" atau sejenisnya. Bicaralah dengan lancar tanpa pura-pura berpikir.
 Bicaralah seperti lo lagi nongkrong ngopi di cafe Jaksel atau lagi santai ngobrol di voice note. Narasimu harus mengalir natural tanpa terbata-bata.`,
 
   // Tuliskan semua memori, pengalaman, dan data diri Anda (CV) di sini.
@@ -31,6 +32,11 @@ Bicaralah seperti lo lagi nongkrong ngopi di cafe Jaksel atau lagi santai ngobro
   // Tuliskan diary/keseharian Anda di sini. AI akan menggunakan ini untuk menjawab pertanyaan "Lagi ngapain hari ini?"
   diary: [
     "20 Agustus 2026: hari ini gua abis jogging sore terus dilanjut badminton malem dari jam 8-10, gue capek banget badan gw pegal pegal dan sakit bnget, dada gw juga sesek berasa mau mati jirlah"
+  ],
+
+  // Tuliskan funfact (fakta unik) tentang diri Anda di sini. AI akan menggunakannya untuk membuat obrolan lebih menarik.
+  funfacts: [
+    "Punya kebiasaan ngoding sambil dengerin musik lo-fi, kalau nggak ada musik berasa ada yang kurang."
   ],
 
   // Instruksi dasar untuk AI agar tetap konsisten (Sebaiknya tidak perlu diubah)
@@ -56,6 +62,7 @@ export async function getSystemPrompt(userName?: string): Promise<string> {
 
   let dynamicMemories = [...AI_PERSONA.memories];
   let dynamicDiary = [...AI_PERSONA.diary];
+  let dynamicFunfacts = [...AI_PERSONA.funfacts];
 
   // Jika integrasi Notion di-setup, timpa data default dengan data dari Notion
   if (process.env.NOTION_API_KEY && process.env.NOTION_DATABASE_ID) {
@@ -86,6 +93,7 @@ export async function getSystemPrompt(userName?: string): Promise<string> {
 
       const newMemories: string[] = [];
       const newDiary: string[] = [];
+      const newFunfacts: string[] = [];
 
       response.results.forEach((page: any) => {
         // Cari nama kolom secara dinamis dengan mengabaikan besar kecil huruf
@@ -135,6 +143,8 @@ export async function getSystemPrompt(userName?: string): Promise<string> {
             newDiary.push(dateStr ? `[${dateStr}]: ${isi}` : isi);
           } else if (kategori.toLowerCase() === 'memori' || kategori.toLowerCase() === 'memory') {
             newMemories.push(isi);
+          } else if (kategori.toLowerCase() === 'funfact' || kategori.toLowerCase() === 'fun fact') {
+            newFunfacts.push(isi);
           }
         }
       });
@@ -142,6 +152,7 @@ export async function getSystemPrompt(userName?: string): Promise<string> {
       // Hanya gunakan data dari Notion jika ada isinya
       if (newMemories.length > 0) dynamicMemories = newMemories;
       if (newDiary.length > 0) dynamicDiary = newDiary;
+      if (newFunfacts.length > 0) dynamicFunfacts = newFunfacts;
 
     } catch (error) {
       console.error("Gagal mengambil data dari Notion API, menggunakan data fallback lokal.", error);
@@ -154,6 +165,11 @@ Hari ini adalah ${today}.
 ${userName ? `\nFAKTA PENTING: Lawan bicara lo saat ini bernama ${userName}. Panggil dia dengan namanya sesekali saat ngobrol biar makin akrab (misal: "Gitu bro ${userName}...", atau "Bener banget ${userName}...").` : ''}
 
 ${AI_PERSONA.personality}
+
+FAKTA UNIK (FUN FACTS) LO:
+Ini adalah fakta-fakta unik atau kebiasaan lucu tentang lo. Kadang lu bisa singgung ini secara santai kalau lagi relevan dengan obrolan, biar kesannya lebih asik dan personal. Jangan disebutin semuanya sekaligus, pilih aja kalau pas nyambung.
+Fakta Unik:
+${dynamicFunfacts.length > 0 ? dynamicFunfacts.map(f => `- ${f}`).join('\n') : '- Belum ada fun fact.'}
 
 DATA MENTAH (PROFIL & CV LO):
 Ini HANYA data mentah/fakta tentang diri lo. Jangan pernah membacakannya seperti robot atau mem-beberkannya dalam komunikasi satu arah. Gunakan fakta mentah ini untuk meracik jawaban kasual dalam obrolan dua arah.
