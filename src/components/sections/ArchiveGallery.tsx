@@ -333,10 +333,10 @@ export function ArchiveGallery() {
   const sceneOpacity = useTransform(cinematicProgress, [0.985, 0.998], [1, 1]);
   const sceneVisibility = useTransform(cinematicProgress, (val) => ("visible"));
 
-  // Stage 4: Wall Panels UI (Visible only during the final wall phase > 0.94 and < 0.975)
-  // At > 0.975 the IMAX flat morph begins, so the UI should disappear
-  const wallUiOpacity = useTransform(cinematicProgress, [0.92, 0.94, 0.970, 0.975], [0, 1, 1, 0]);
-  const wallUiVisibility = useTransform(cinematicProgress, (val) => (val < 0.91 || val > 0.976 ? "hidden" : "visible"));
+  // Stage 4: Wall Panels UI (Visible only during the final wall phase > 0.94 and < 0.985)
+  // At > 0.985 the IMAX flat morph begins, so the UI should disappear
+  const wallUiOpacity = useTransform(cinematicProgress, [0.92, 0.94, 0.982, 0.985], [0, 1, 1, 0]);
+  const wallUiVisibility = useTransform(cinematicProgress, (val) => (val < 0.91 || val > 0.986 ? "hidden" : "visible"));
   const wallUiTranslateX = useTransform(cinematicProgress, [0.92, 0.94], [25, 0]);
 
   // HUD background ring opacity — visible during HUD phase only (fades out completely by 0.29)
@@ -357,6 +357,10 @@ export function ArchiveGallery() {
   const [clampedWallIndex, setClampedWallIndex] = useState(-1);
   const isSnappingRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Ref-based tracking untuk wall index (menghindari stale closure di dalam scroll handler)
+  const wallIndexRef = useRef(-1);
+  // Timestamp cooldown setelah snap selesai (mencegah momentum sisa Lenis memicu lompatan ganda)
+  const snapCooldownRef = useRef(0);
 
   useEffect(() => {
     // Perfect Snap & Discrete Scroll mechanism:
@@ -410,15 +414,17 @@ export function ArchiveGallery() {
           force: true,
           lock: true,
           onComplete: () => {
-            // Unlock snap only after fully settled
+            // Set cooldown agar momentum sisa Lenis tidak langsung memicu snap berikutnya
+            snapCooldownRef.current = Date.now();
             setTimeout(() => {
               isSnappingRef.current = false;
-            }, 50);
+            }, 100);
           }
         });
 
         // Safety unlock in case onComplete fails to fire (e.g., if already at target position)
         setTimeout(() => {
+          snapCooldownRef.current = Date.now();
           isSnappingRef.current = false;
         }, 1300);
       };
@@ -477,43 +483,78 @@ export function ArchiveGallery() {
           
         } else {
           // Fase J-Curve Wall Panels (Background Melengkung)
-          // Menghapus logika sinkronisasi 'diff' karena activeIndex hanya untuk Carousel, 
-          // sehingga mencegah paksaan pindah ke Iron Man saat berada di Doctor Strange.
+          // Sinkronisasi ref dari state setiap kali effect berjalan ulang
+          wallIndexRef.current = clampedWallIndex;
 
-          const handleScroll = (e: any) => {
-            if (isSnappingRef.current || !isWallPanel) return;
+          // STRATEGI ANTI-TRAVELING:
+          // Alih-alih mendengarkan Lenis scroll event (yang sudah terlambat — Lenis sudah menggerakkan view),
+          // kita INTERCEPT wheel event di capture phase SEBELUM Lenis memprosesnya.
+          // preventDefault() + stopImmediatePropagation() memblokir Lenis sepenuhnya,
+          // sehingga scroll HANYA bergerak lewat doSnap() yang kita kontrol.
+          
+          const handleWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
             
-            // TANGKAP MOMENTUM AWAL: Jika user scroll dengan sengaja, langsung potong
-            // momentumnya dan arahkan HANYA ke 1 panel berikutnya.
-            // Ambang batas sangat rendah (0.05) agar scroll sedikit saja langsung pindah panel
-            if (Math.abs(e.velocity) > 0.05) {
-              if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-              
-              const step = e.velocity > 0 ? 1 : -1;
-              const newIndex = clampedWallIndex + step;
-              const maxIndex = HERO_PROCESS_ITEMS.length;
-              const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
-              
-              if (clampedNewIndex !== clampedWallIndex) {
-                setClampedWallIndex(clampedNewIndex);
-                // Selalu panggil doSnap, termasuk untuk -1 agar bisa snap kembali ke Carousel
-                doSnap(clampedNewIndex, true);
-              }
-            } else {
-              if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-              scrollTimeoutRef.current = setTimeout(() => {
-                // Snap ke tengah panel saat ini jika user berhenti scroll di posisi nanggung
-                if (clampedWallIndex >= -1) {
-                  doSnap(clampedWallIndex, true);
-                }
-              }, 200);
+            if (isSnappingRef.current) return;
+            if (Date.now() - snapCooldownRef.current < 500) return;
+            
+            const step = e.deltaY > 0 ? 1 : -1;
+            const currentIdx = wallIndexRef.current;
+            const newIndex = currentIdx + step;
+            const maxIndex = HERO_PROCESS_ITEMS.length;
+            const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
+            
+            if (clampedNewIndex !== currentIdx) {
+              wallIndexRef.current = clampedNewIndex;
+              setClampedWallIndex(clampedNewIndex);
+              doSnap(clampedNewIndex, true);
             }
           };
           
-          lenis.on('scroll', handleScroll);
+          // Touch handling untuk mobile (swipe detection)
+          let touchStartY = 0;
+          let touchHandled = false;
+          
+          const handleTouchStart = (e: TouchEvent) => {
+            touchStartY = e.touches[0].clientY;
+            touchHandled = false;
+          };
+          
+          const handleTouchMove = (e: TouchEvent) => {
+            // Blokir scroll native selama wall phase
+            e.preventDefault();
+            
+            if (touchHandled || isSnappingRef.current) return;
+            if (Date.now() - snapCooldownRef.current < 500) return;
+            
+            const deltaY = touchStartY - e.touches[0].clientY;
+            if (Math.abs(deltaY) < 30) return; // Minimum swipe distance
+            
+            touchHandled = true;
+            
+            const step = deltaY > 0 ? 1 : -1;
+            const currentIdx = wallIndexRef.current;
+            const newIndex = currentIdx + step;
+            const maxIndex = HERO_PROCESS_ITEMS.length;
+            const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
+            
+            if (clampedNewIndex !== currentIdx) {
+              wallIndexRef.current = clampedNewIndex;
+              setClampedWallIndex(clampedNewIndex);
+              doSnap(clampedNewIndex, true);
+            }
+          };
+          
+          // Capture phase (true) agar fire SEBELUM Lenis dan listener lainnya
+          window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+          window.addEventListener('touchstart', handleTouchStart, { passive: true, capture: true });
+          window.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
           
           return () => {
-            lenis.off('scroll', handleScroll);
+            window.removeEventListener('wheel', handleWheel, { capture: true });
+            window.removeEventListener('touchstart', handleTouchStart, { capture: true });
+            window.removeEventListener('touchmove', handleTouchMove, { capture: true });
             if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
           };
         }
@@ -521,9 +562,12 @@ export function ArchiveGallery() {
     }
   }, [activeIndex, clampedActiveIndex, clampedWallIndex, isWallPanel, galleryItems.length]);
 
+  const safeWallIndex = Math.max(0, Math.min(HERO_PROCESS_ITEMS.length - 1, clampedWallIndex));
+  const safeActiveIndex = Math.max(0, Math.min(galleryItems.length - 1, clampedActiveIndex));
+
   const activeItem = isWallPanel 
-    ? (HERO_PROCESS_ITEMS[clampedWallIndex] || HERO_PROCESS_ITEMS[0]) 
-    : (galleryItems[clampedActiveIndex] || galleryItems[0]);
+    ? HERO_PROCESS_ITEMS[safeWallIndex] 
+    : galleryItems[safeActiveIndex];
 
   return (
     <section id="gallery-section" className="dark relative bg-transparent z-10 w-full" onMouseMove={handleMouseMove}>
