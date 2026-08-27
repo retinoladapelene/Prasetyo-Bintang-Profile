@@ -88,11 +88,17 @@ html, body, * {
 .animate-marquee-left {
   animation: marquee-left 40s linear infinite;
   will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  contain: layout style paint;
 }
 
 .animate-marquee-right {
   animation: marquee-right 50s linear infinite;
   will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  contain: layout style paint;
 }
 
 .theme-web {

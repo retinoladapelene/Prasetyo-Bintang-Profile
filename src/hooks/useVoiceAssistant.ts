@@ -97,11 +97,14 @@ export function useVoiceAssistant() {
         return;
       }
 
-      // 2. Gunakan Edge Neural TTS API
+      // 2. Gunakan Kyutai Pocket TTS (Voice Cloning Lokal)
       try {
-        const ttsRes = await fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const ttsRes = await fetch("https://bumpy-toes-double.loca.lt/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Bypass-Tunnel-Reminder": "true", // Otomatis melewati halaman peringatan keamanan localtunnel
+          },
           body: JSON.stringify({ text: reply }),
         });
 
@@ -114,6 +117,11 @@ export function useVoiceAssistant() {
           }
           
           audioRef.current.src = audioUrlStr;
+          
+          // Perlambat kecepatan audio sedikit agar tidak terlalu cepat (seperti rapper)
+          // Browser otomatis menjaga nada (pitch) agar tetap sama (preservesPitch = true)
+          audioRef.current.playbackRate = 0.85; 
+          
           audioRef.current.onplay = () => setIsSpeaking(true);
           audioRef.current.onended = () => {
             setIsSpeaking(false);

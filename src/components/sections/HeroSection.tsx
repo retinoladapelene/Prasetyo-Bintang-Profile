@@ -39,7 +39,7 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
       <div
         id="marquee-container"
         className="absolute inset-0 z-0 flex flex-col justify-center gap-0 select-none overflow-hidden pointer-events-none"
-        style={{ opacity: 0.001, willChange: "opacity", transform: "translateZ(0)" }}
+        style={{ opacity: 0.001, willChange: "opacity, visibility", transform: "translateZ(0)" }}
       >
         <div
           className="flex whitespace-nowrap animate-marquee-left"
@@ -77,7 +77,7 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
             style={{
               opacity: 0.001,
               transform: 'translateZ(0)',
-              willChange: 'transform, opacity'
+              willChange: 'transform, opacity, visibility'
             }}
           >
             <div className="flex flex-col items-start text-left">
@@ -120,7 +120,7 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
             />
 
             <div className="relative overflow-hidden flex items-end justify-center rounded-t-[32px] md:rounded-[32px] bg-transparent h-[90vh] md:h-[98vh] self-end md:self-auto w-full" style={{ willChange: 'transform, border-radius', transform: 'translateZ(0)' }}>
-              <div id="card-inner-contents" className="absolute inset-0 w-full h-full pointer-events-none" style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}>
+              <div id="card-inner-contents" className="absolute inset-0 w-full h-full pointer-events-none" style={{ willChange: 'transform, opacity, visibility', transform: 'translateZ(0)' }}>
                 <div id="hero-photo-container" className="absolute inset-0 w-full h-full flex items-end justify-center pointer-events-auto">
                   <InteractivePhoto settings={heroSettings} />
                 </div>

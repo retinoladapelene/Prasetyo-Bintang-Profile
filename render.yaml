@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: tts-server-api
+    env: docker
+    rootDir: tts-server
+    plan: free # Anda bisa gunakan free plan, namun untuk AI mungkin butuh plan berbayar karena butuh RAM
+    region: singapore # Opsional
+    envVars:
+      - key: HF_TOKEN
+        sync: false # Anda harus memasukkan Token HuggingFace secara manual di dashboard Render

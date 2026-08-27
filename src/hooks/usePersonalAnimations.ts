@@ -47,6 +47,17 @@ export function usePersonalAnimations({
         force3D: true,
       });
 
+      // PRE-PROMOTE GPU LAYERS: Force the browser to create compositor layers NOW
+      // so the first animation frame doesn't trigger expensive layer promotion mid-scroll.
+      // Elements starting at opacity 0.001 with will-change are NOT promoted until first paint.
+      gsap.set(["#card-inner-contents", "#transition-text", "#marquee-container"], {
+        force3D: true,
+      });
+      // Force marquee text items onto GPU by touching their transform
+      gsap.set(".animate-marquee-left, .animate-marquee-right", {
+        force3D: true,
+      });
+
       // ── 2ND-ORDER KINEMATIC INERTIA ENGINE FOR HERO SECTION (Alche Studio Smoothness) ──
       // Why replace simple scrub? When scrolling fast, linear lerps cause harsh initial velocity spikes 
       // followed by sluggish trailing. By controlling physical momentum and capping maximum velocity, 
@@ -130,7 +141,8 @@ export function usePersonalAnimations({
 
       // IMMEDIATELY hide heavy SVG filters and wireframe animations as soon as scroll starts 
       // (eliminating heavy GPU SVG filter recalculations during the scale transform for a buttery smooth 60fps zoom out)
-      tl.to(["#mask-photo-layer", "#interactive-photo-filters", "#idle-wireframe-layer"], { autoAlpha: 0, duration: 0.01 }, 0.0);
+      // Use opacity instead of autoAlpha to prevent visibility toggling which causes layer-tree rebuild stutters.
+      tl.to(["#mask-photo-layer", "#interactive-photo-filters", "#idle-wireframe-layer"], { opacity: 0, pointerEvents: "none", duration: 0.01 }, 0.0);
 
       tl.to("#transition-text", { opacity: 1, y: -20, duration: 0.2, ease: "power2.out" }, 0.25);
 
@@ -164,7 +176,7 @@ export function usePersonalAnimations({
       // At 0.45: Immediately discard the heavy 90px card drop shadow BEFORE scaling starts so GPU doesn't scale heavy blur
       tl.to(
         "#card-shadow-layer",
-        { autoAlpha: 0, duration: 0.05, ease: "power1.out", force3D: true },
+        { opacity: 0, duration: 0.05, ease: "power1.out", force3D: true },
         0.45
       );
 
@@ -177,9 +189,10 @@ export function usePersonalAnimations({
       );
 
       // We fade out the contents simultaneously so it cleanly disappears into the background
+      // Again, using opacity instead of autoAlpha to prevent stutter from visibility toggle during the slide-up
       tl.to(
         ["#card-inner-contents", "#transition-text", "#marquee-container"],
-        { autoAlpha: 0, ease: "power2.inOut", duration: 0.18, force3D: true },
+        { opacity: 0, pointerEvents: "none", ease: "power2.inOut", duration: 0.18, force3D: true },
         0.50
       );
 
@@ -220,17 +233,33 @@ export function usePersonalAnimations({
       // 3. Reset timeline to progress 0 so animation starts fresh for the user.
 
       const runWarmup = () => {
-        // Step 2: Seek through the entire animation — forces VRAM upload + JIT compilation
-        const passes = [0.10, 0.25, 0.35, 0.50, 0.52, 0.55, 0.50, 0.0];
+        // Step 2: Seek through the ENTIRE animation — forces VRAM upload + JIT compilation
+        // Critical: passes MUST cover the slide-up phase (0.50-0.75) and fade-out (0.74)
+        // to prevent first-scroll stutter on those transitions
+        const passes = [0.10, 0.25, 0.35, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.50, 0.0];
+        
+        // Reference element for forced reflow — reading offsetHeight after each seek
+        // forces the browser to actually PAINT the frame (not just batch styles silently).
+        // Without this, the browser may skip painting because elements are under the loading screen.
+        const reflowTarget = imageRef.current || document.body;
+        
         let i = 0;
         const step = () => {
           if (i < passes.length) {
             tl.progress(passes[i], true); // suppressEvents = true: update DOM silently
+            
+            // FORCE PAINT: Reading offsetHeight triggers synchronous layout + paint.
+            // This is the critical difference — without this, the browser only sets
+            // inline styles but never actually composites the GPU layers, so the
+            // first real scroll still needs to compile shaders and rasterize textures.
+            void reflowTarget.offsetHeight;
+            
             i++;
             requestAnimationFrame(step);
           } else {
             // Reset to start — animation is now fully warm, user gets smooth first scroll
             tl.progress(0, true);
+            void reflowTarget.offsetHeight; // Flush final reset too
             currentProgress = targetProgress; // Catch up to where user actually is
             isWarmingUp = false;
           }
