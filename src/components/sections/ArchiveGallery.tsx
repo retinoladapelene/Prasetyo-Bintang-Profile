@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent, MotionValue } from "framer-motion";
 import { ArrowUpRight, Terminal, X, Database, BarChart, Code, Shield, Network, Zap, Eye, PenTool, Activity, Rocket } from "lucide-react";
 import { CylinderGalleryScene, GALLERY_CONFIG, GALLERY_TRAVEL } from "@/components/three/CylinderGalleryScene";
 import { ProjectBackground } from "@/components/ui/ProjectBackground";
@@ -9,10 +9,135 @@ import { TonyStarkHudProfile } from "@/components/sections/TonyStarkHudProfile";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+// Sub-komponen untuk memetakan animasi fade teks berdasarkan nilai scroll secara persis
+const WallPhaseItemText = ({ item, index, cinematicProgress }: { item: any, index: number, cinematicProgress: MotionValue<number> }) => {
+  const [stops, setStops] = useState(() => {
+    const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+    const START_T = 1.40;
+    const T_LEFT = isMobile ? 0.56 : 0.37;
+    const SPACING = 1.15;
+    const TRAVEL = START_T - T_LEFT + 4 * SPACING;
+    const initStops = [];
+    for (let i = -1; i <= 5; i++) {
+      const wp = ((i * SPACING) + START_T - T_LEFT) / TRAVEL;
+      initStops.push(0.94 + wp * (0.975 - 0.94));
+    }
+    return initStops;
+  });
 
+  useEffect(() => {
+    const updateStops = () => {
+      const isMobile = window.innerWidth < 768;
+      const START_T = 1.40;
+      const T_LEFT = isMobile ? 0.56 : 0.37;
+      const SPACING = 1.15;
+      const TRAVEL = START_T - T_LEFT + 4 * SPACING;
+      const newStops = [];
+      for (let i = -1; i <= 5; i++) {
+        const wp = ((i * SPACING) + START_T - T_LEFT) / TRAVEL;
+        newStops.push(0.94 + wp * (0.975 - 0.94));
+      }
+      setStops(newStops);
+    };
+    
+    window.addEventListener("resize", updateStops);
+    return () => window.removeEventListener("resize", updateStops);
+  }, []);
 
+  const currentStop = stops[index + 1];
+  const prevStop = stops[index];
+  const nextStop = stops[index + 2];
+  
+  // Use standard crossfade to prevent overlapping at intermediate scroll positions
+  const opacity = useTransform(
+    cinematicProgress,
+    [prevStop, currentStop, nextStop],
+    [0, 1, 0]
+  );
+  
+  const x = useTransform(
+    cinematicProgress,
+    [prevStop, currentStop, nextStop],
+    [50, 0, -50]
+  );
+  
+  const pointerEvents = useTransform(opacity, (v) => v > 0.5 ? "auto" : "none");
 
+  return (
+    <motion.div
+      style={{
+        opacity,
+        x,
+        pointerEvents,
+        willChange: "transform, opacity",
+      }}
+      className="absolute inset-0 flex flex-col items-start text-left"
+    >
+      {/* Chapter Header */}
+      <div className={`hidden md:flex items-center gap-3 md:gap-4 ${item.themeColor || 'text-white'} mb-3 md:mb-6`}>
+        <span className="font-mono text-sm tracking-widest uppercase font-bold">
+          CHAPTER {item.id}
+        </span>
+        <div className={`h-[1px] w-12 md:w-32 bg-current opacity-50 relative`}>
+          <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full ${item.themeBg || 'bg-white'} ${item.themeShadow ? 'shadow-[0_0_8px]' : ''}`} />
+        </div>
+      </div>
 
+      {/* Title */}
+      <h3 className="font-bold mb-2 md:mb-6 uppercase tracking-widest leading-[1.1] drop-shadow-2xl text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-syne text-white shadow-black whitespace-pre-line">
+        {item.wallTitle || item.title}
+      </h3>
+
+      {/* Subtitle */}
+      <div className={`flex items-center gap-2 md:gap-4 ${item.themeColor || 'text-white'} mb-3 md:mb-8`}>
+        <div className="hidden md:block w-8 h-[1px] bg-current" />
+        <span className="font-mono tracking-[0.1em] md:tracking-[0.2em] uppercase text-[10px] md:text-sm font-bold">
+          {item.wallType || item.type}
+        </span>
+      </div>
+
+      {/* Description Block */}
+      <div className="flex flex-col md:flex-row gap-3 md:gap-6 mb-3 md:mb-6 items-start md:items-stretch">
+        {/* Hexagon Icon */}
+        <div className="hidden md:flex relative w-12 h-12 md:w-16 md:h-16 items-center justify-center flex-shrink-0">
+          <svg viewBox="0 0 100 100" className={`absolute inset-0 w-full h-full ${item.themeColor || 'text-white'} opacity-80`} fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="50 3, 93 25, 93 75, 50 97, 7 75, 7 25" />
+          </svg>
+          {item.icon ? (
+            <item.icon size={24} className={`${item.themeColor || 'text-white'}`} />
+          ) : (
+            <Code size={24} className={`${item.themeColor || 'text-white'}`} />
+          )}
+        </div>
+        
+        {/* Vertical Line */}
+        <div className="hidden md:block w-[1px] bg-white/20 self-stretch" />
+        
+        {/* Text */}
+        <div className="text-[10px] sm:text-[11px] md:text-[13px] text-white/80 md:text-white/80 leading-relaxed whitespace-pre-wrap max-w-sm md:max-w-none drop-shadow-md">
+          {item.wallDesc || item.desc}
+        </div>
+      </div>
+
+      {/* Quote Block */}
+      {item.quote && (
+        <div className="hidden md:flex gap-3 md:gap-4 mt-2">
+          <span className={`text-4xl md:text-5xl font-serif ${item.themeColor || 'text-white'} opacity-30 leading-none mt-1`}>
+            "
+          </span>
+          <p className="text-[11px] md:text-xs text-white/70 mt-2 leading-relaxed max-w-md">
+            {item.quote.text.split(new RegExp(`(${item.quote.highlights.join('|')})`, 'gi')).map((part: string, i: number) => {
+              if (item.quote.highlights.some((h: string) => h.toLowerCase() === part.toLowerCase())) {
+                return <span key={i} className={`${item.themeColor || 'text-white'} font-bold`}>{part}</span>;
+              }
+              return part;
+            })}
+          </p>
+        </div>
+      )}
+    </motion.div>
+  );
+};
 
 export const FALLBACK_GALLERY_ITEMS = [
   {
@@ -85,15 +210,15 @@ export const HERO_PROCESS_ITEMS = [
     id: "01",
     title: "PLAN",
     year: "Step 01",
-    type: "Strategy & Requirements",
-    desc: "Menentukan konsep, struktur, dan user flow sebelum eksekusi dimulai.",
+    type: "Strategy & Architecture",
+    desc: "Menganalisis arsitektur, edge-cases, dan roadmap sebelum menulis satu baris kode pun.",
     image_url: "/images/projects/funquiz.png",
     images: ["/images/projects/funquiz.png"],
     wallVideo: "/videos/doctorstrange.webm",
     tech: ["NOTION", "FIGJAM", "STRATEGY"],
-    wallTitle: "DOCTOR STRANGE X NOTION",
+    wallTitle: "DOCTOR STRANGE\nX NOTION",
     wallType: "See the possibilities.",
-    wallDesc: "Doctor Strange melihat jutaan kemungkinan masa depan untuk menentukan satu jalur kemenangan mutlak.\n\nFase PLAN (Perencanaan) adalah 'Time Stone' saya. Menggunakan Notion dan FigJam, saya memetakan requirements, sitemap, dan user flow untuk memastikan arsitektur yang dibangun nantinya tidak salah arah.",
+    wallDesc: "Layaknya Doctor Strange yang memperhitungkan berbagai kemungkinan, fase PLAN dirancang untuk memetakan arah proyek dengan presisi.\n\nMenggunakan alat seperti Notion dan FigJam, saya menyusun arsitektur data, alur pengguna, dan strategi pengembangan. Perencanaan yang matang di awal memastikan eksekusi yang lebih terarah dan efisien.",
     wallTech: ["PLAN", "NOTION", "FIGJAM"],
     themeColor: "text-[#f59e0b]",
     themeBg: "bg-[#f59e0b]",
@@ -101,8 +226,8 @@ export const HERO_PROCESS_ITEMS = [
     themeShadow: "shadow-[#f59e0b]",
     icon: Eye,
     quote: {
-      text: "See the possibilities before making a move.",
-      highlights: ["possibilities", "move"]
+      text: "Strategic planning defines the outcome.",
+      highlights: ["Strategic", "outcome"]
     }
   },
   {
@@ -110,14 +235,14 @@ export const HERO_PROCESS_ITEMS = [
     title: "DESIGN",
     year: "Step 02",
     type: "UI/UX & Prototyping",
-    desc: "Memvisualisasikan ide menjadi desain antarmuka yang interaktif dan presisi.",
+    desc: "Menciptakan UI/UX yang futuristik, intuitif, dan didukung oleh Design System yang solid.",
     image_url: "/images/projects/spreadsheet banner.png",
     images: ["/images/projects/spreadsheet banner.png"],
     wallVideo: "/videos/ironman.webm",
     tech: ["FIGMA", "DESIGN SYSTEM", "UI/UX"],
-    wallTitle: "IRON MAN X FIGMA",
+    wallTitle: "IRON MAN\nX FIGMA",
     wallType: "Build the blueprint.",
-    wallDesc: "Tony Stark selalu memvisualisasikan cetak biru armornya sebelum merakit besi sungguhan.\n\nFigma adalah laboratorium hologram saya. Di sinilah wireframe berevolusi menjadi purwarupa (prototype) dan Design System yang solid, memastikan setiap piksel memiliki tujuan yang jelas.",
+    wallDesc: "Seperti Tony Stark yang merancang cetak biru armornya, fase DESIGN adalah tahap di mana konsep divisualisasikan.\n\nMelalui Figma, gagasan mentah diubah menjadi antarmuka (UI/UX) yang matang dan siap pakai. Setiap komponen dirancang agar tidak hanya menarik secara visual, tetapi juga intuitif bagi pengguna akhir.",
     wallTech: ["DESIGN", "FIGMA", "PROTOTYPE"],
     themeColor: "text-[#ef4444]",
     themeBg: "bg-[#ef4444]",
@@ -125,8 +250,8 @@ export const HERO_PROCESS_ITEMS = [
     themeShadow: "shadow-[#ef4444]",
     icon: PenTool,
     quote: {
-      text: "Vision without execution is hallucination.\nBuild the blueprint first.",
-      highlights: ["Vision", "blueprint"]
+      text: "Precision in design accelerates development.",
+      highlights: ["Precision", "development"]
     }
   },
   {
@@ -134,14 +259,14 @@ export const HERO_PROCESS_ITEMS = [
     title: "BUILD",
     year: "Step 03",
     type: "Development & Logic",
-    desc: "Menerjemahkan desain menjadi baris kode yang interaktif, fungsional, dan dinamis.",
+    desc: "Mengeksekusi desain menjadi arsitektur frontend yang lincah, reaktif, dan tangguh.",
     image_url: "/images/projects/banner project looker studio.png",
     images: ["/images/projects/banner project looker studio.png"],
     wallVideo: "/videos/spiderman.webm",
     tech: ["VS CODE", "GITHUB", "TYPESCRIPT"],
-    wallTitle: "SPIDER-MAN X VS CODE",
+    wallTitle: "SPIDER-MAN\nX VS CODE",
     wallType: "Weave the web.",
-    wallDesc: "Seperti Spider-Man yang merajut jaringnya dengan presisi matematis dan kelenturan tingkat tinggi.\n\nFase BUILD adalah tempat saya 'merajut' kode. Menggunakan VS Code dan ekosistem modern (Next.js/React/TypeScript), saya membangun arsitektur frontend yang sangat lincah, tangguh, dan responsif layaknya jaring laba-laba.",
+    wallDesc: "Fase BUILD membutuhkan kelincahan teknis layaknya Spider-Man yang merajut jaringnya dengan akurat.\n\nDengan stack modern seperti Next.js, React, dan TypeScript, saya membangun kode yang bersih, modular, dan dapat diskalakan. Fokus utamanya adalah menciptakan produk digital yang interaktif dan performen tinggi.",
     wallTech: ["BUILD", "VS CODE", "TYPESCRIPT"],
     themeColor: "text-[#3b82f6]",
     themeBg: "bg-[#3b82f6]",
@@ -149,8 +274,8 @@ export const HERO_PROCESS_ITEMS = [
     themeShadow: "shadow-[#3b82f6]",
     icon: Code,
     quote: {
-      text: "With great logic comes great functionality.",
-      highlights: ["logic", "functionality"]
+      text: "Clean architecture weaves a resilient application.",
+      highlights: ["architecture", "resilient"]
     }
   },
   {
@@ -158,14 +283,14 @@ export const HERO_PROCESS_ITEMS = [
     title: "TEST",
     year: "Step 04",
     type: "Debugging & QA",
-    desc: "Menguji setiap sudut aplikasi untuk memastikan performa maksimal dan tanpa celah.",
+    desc: "Melakukan stress-test brutal untuk memastikan performa tinggi dan aplikasi bebas bug.",
     image_url: "/images/projects/banner project looker studio.png",
     images: ["/images/projects/banner project looker studio.png"],
     wallVideo: "/videos/hulk.webm",
     tech: ["DEVTOOLS", "LIGHTHOUSE", "VITEST"],
-    wallTitle: "HULK X DEVTOOLS",
+    wallTitle: "HULK\nX DEVTOOLS",
     wallType: "Smash the bugs.",
-    wallDesc: "Hulk adalah simbol kekuatan absolut dan daya tahan yang tidak bisa dihancurkan.\n\nFase TEST adalah pengujian brutal. Menggunakan Chrome DevTools, saya melakukan stress-test, mencari bug, mengoptimalkan Lighthouse score, dan memastikan kode ini kokoh serta tidak akan 'hancur' di bawah beban berat.",
+    wallDesc: "Ketahanan adalah kunci. Seperti Hulk yang diuji di bawah tekanan, fase TEST memastikan aplikasi tidak mudah hancur.\n\nSaya memanfaatkan Chrome DevTools dan Lighthouse untuk mendeteksi celah, menguji daya tahan (stress-test), dan mengoptimalkan kinerja. Aplikasi harus terbukti solid sebelum menyentuh tangan pengguna.",
     wallTech: ["TEST", "DEBUG", "PERFORMANCE"],
     themeColor: "text-[#10b981]",
     themeBg: "bg-[#10b981]",
@@ -173,8 +298,8 @@ export const HERO_PROCESS_ITEMS = [
     themeShadow: "shadow-[#10b981]",
     icon: Activity,
     quote: {
-      text: "Break it in development before the users do in production.",
-      highlights: ["Break", "production"]
+      text: "Rigorous testing guarantees reliability.",
+      highlights: ["testing", "reliability"]
     }
   },
   {
@@ -182,14 +307,14 @@ export const HERO_PROCESS_ITEMS = [
     title: "DEPLOY",
     year: "Step 05",
     type: "Production & Hosting",
-    desc: "Meluncurkan aplikasi ke ranah publik dan memastikan keandalannya di production.",
+    desc: "Menerbangkan aplikasi ke ranah publik dengan stabilitas dan keandalan tingkat tinggi.",
     image_url: "/images/projects/funquiz.png",
     images: ["/images/projects/funquiz.png"],
     wallVideo: "/videos/captainamericavideo.webm",
     tech: ["VERCEL", "DOMAIN", "CI/CD"],
-    wallTitle: "CAPTAIN AMERICA X VERCEL",
+    wallTitle: "CAPTAIN AMERICA\nX VERCEL",
     wallType: "Ready for launch.",
-    wallDesc: "Captain America melambangkan kesiapan misi, keandalan (reliability), dan eksekusi akhir.\n\nFase DEPLOY adalah garis akhir sekaligus awal baru. Melalui pipeline CI/CD di Vercel, kode yang telah teruji diterbangkan ke ranah publik (live production), berdiri kokoh sebagai produk akhir yang siap melayani pengguna.",
+    wallDesc: "Kesiapan dan kepemimpinan adalah esensi dari fase DEPLOY, sejalan dengan prinsip Captain America.\n\nMengandalkan infrastruktur Vercel dan alur CI/CD yang terotomatisasi, kode yang telah teruji didistribusikan ke environment production. Proses peluncuran dilakukan secara terukur untuk memastikan aplikasi berjalan tanpa gangguan.",
     wallTech: ["DEPLOY", "VERCEL", "DOMAIN"],
     themeColor: "text-[#0ea5e9]",
     themeBg: "bg-[#0ea5e9]",
@@ -197,8 +322,8 @@ export const HERO_PROCESS_ITEMS = [
     themeShadow: "shadow-[#0ea5e9]",
     icon: Rocket,
     quote: {
-      text: "Mission ready. The foundation is set,\nand the launch is inevitable.",
-      highlights: ["Mission ready", "launch"]
+      text: "Seamless deployment ensures a successful launch.",
+      highlights: ["deployment", "successful"]
     }
   }
 ];
@@ -335,9 +460,9 @@ export function ArchiveGallery() {
 
   // Stage 4: Wall Panels UI (Visible only during the final wall phase > 0.94 and < 0.985)
   // At > 0.985 the IMAX flat morph begins, so the UI should disappear
-  const wallUiOpacity = useTransform(cinematicProgress, [0.92, 0.94, 0.982, 0.985], [0, 1, 1, 0]);
-  const wallUiVisibility = useTransform(cinematicProgress, (val) => (val < 0.91 || val > 0.986 ? "hidden" : "visible"));
-  const wallUiTranslateX = useTransform(cinematicProgress, [0.92, 0.94], [25, 0]);
+  const wallUiOpacity = useTransform(cinematicProgress, [0.88, 0.94, 0.982, 0.985], [0, 1, 1, 0]);
+  const wallUiVisibility = useTransform(cinematicProgress, (val) => (val < 0.87 || val > 0.986 ? "hidden" : "visible"));
+  const wallUiTranslateX = useTransform(cinematicProgress, [0.88, 0.94], [50, 0]);
 
   // HUD background ring opacity — visible during HUD phase only (fades out completely by 0.29)
   const hudRingOpacity = useTransform(cinematicProgress, [0.18, 0.21, 0.26, 0.29], [0, 1, 1, 0]);
@@ -350,7 +475,14 @@ export function ArchiveGallery() {
   const [isWallPanel, setIsWallPanel] = useState(false);
   useMotionValueEvent(cinematicProgress, "change", (val) => {
     setIsHudRingActive(val >= 0.15 && val <= 0.30);
-    setIsWallPanel(val >= 0.85);
+    const inWall = val >= 0.9460;
+    setIsWallPanel((prev) => {
+      if (prev !== inWall) {
+        if (!inWall) setClampedWallIndex(-1);
+        return inWall;
+      }
+      return prev;
+    });
   });
 
   const [clampedActiveIndex, setClampedActiveIndex] = useState(-1);
@@ -405,11 +537,17 @@ export function ArchiveGallery() {
           }
         }
         
+        // Hitung durasi dinamis: jika melompat jauh (antar phase), buat lebih lambat dan gentle
+        const currentScrollY = lenis.scroll;
+        const distance = Math.abs(targetScrollY - currentScrollY);
+        const isFar = distance > window.innerHeight * 1.5;
+        const snapDuration = isFar ? 1.2 : 0.5;
+        
         // Scroll ke panel terdekat
         // Gunakan force: true dan lock: true agar animasi tidak dibatalkan dan 
         // native scroll tidak melompat jauh (terlempar) saat user melakukan swipe keras.
         lenis.scrollTo(targetScrollY, { 
-          duration: 0.8, 
+          duration: snapDuration, 
           easing: (t: number) => 1 - Math.pow(1 - t, 4), // easeOutQuart
           force: true,
           lock: true,
@@ -418,7 +556,7 @@ export function ArchiveGallery() {
             snapCooldownRef.current = Date.now();
             setTimeout(() => {
               isSnappingRef.current = false;
-            }, 100);
+            }, 50);
           }
         });
 
@@ -426,7 +564,7 @@ export function ArchiveGallery() {
         setTimeout(() => {
           snapCooldownRef.current = Date.now();
           isSnappingRef.current = false;
-        }, 1300);
+        }, snapDuration * 1000 + 100);
       };
 
       if (st) {
@@ -441,43 +579,111 @@ export function ArchiveGallery() {
             setClampedActiveIndex(clampedActiveIndex + step); 
           }
 
-          const handleScroll = (e: any) => {
-            if (isSnappingRef.current || isWallPanel) return;
-            
+          const handleWheel = (e: WheelEvent) => {
+            // Only intercept if we're actually inside the gallery's pinned area
             const currentProgress = cinematicProgress.get();
-            if (currentProgress < 0.35) return;
+            if (currentProgress < 0.1 || currentProgress > 0.85) return;
+            
+            const step = e.deltaY > 0 ? 1 : -1;
+            const currentIdx = clampedActiveIndex;
+            const maxIndex = galleryItems.length - 1;
+            
+            // Allow free scroll when leaving Carousel downwards
+            if (currentIdx === maxIndex && step > 0) return;
+            
+            // Allow free scroll when leaving Carousel upwards (to top of page)
+            if (currentIdx <= 0 && step < 0) return;
 
-            // Discrete Scroll: 1 Scroll = 1 Panel
-            // Ambang batas sangat rendah agar dikit aja langsung pindah
-            if (Math.abs(e.velocity) > 0.05) {
-              if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-              
-              const step = e.velocity > 0 ? 1 : -1;
-              const newIndex = clampedActiveIndex + step;
-              const maxIndex = galleryItems.length - 1;
-              const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
-              
-              if (clampedNewIndex !== clampedActiveIndex) {
-                setClampedActiveIndex(clampedNewIndex);
-                if (clampedNewIndex >= 0) {
-                  doSnap(clampedNewIndex, false);
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            
+            if (isSnappingRef.current) return;
+            if (Date.now() - snapCooldownRef.current < 150) return;
+            
+            const newIndex = currentIdx + step;
+            const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
+            
+            if (clampedNewIndex !== currentIdx) {
+              setClampedActiveIndex(clampedNewIndex);
+              if (clampedNewIndex >= 0) {
+                doSnap(clampedNewIndex, false);
+              } else {
+                // Let user scroll naturally out of the top
+                const st = ScrollTrigger.getById("galleryTrigger");
+                if (st) {
+                  lenis.scrollTo(st.start - window.innerHeight * 0.5, { duration: 1 });
                 }
               }
-            } else {
-              // Fallback snap if they scroll very slowly
-              if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-              scrollTimeoutRef.current = setTimeout(() => {
-                if (clampedActiveIndex >= 0) {
-                  doSnap(clampedActiveIndex, false);
-                }
-              }, 200);
+            } else if (newIndex > maxIndex) {
+              // Now handled by free scroll above
+            } else if (newIndex < -1) {
+              // Now handled by free scroll above
             }
           };
+
+          // Touch handling untuk mobile (swipe detection)
+          let touchStartY = 0;
+          let touchHandled = false;
           
-          lenis.on('scroll', handleScroll);
+          const handleTouchStart = (e: TouchEvent) => {
+            const currentProgress = cinematicProgress.get();
+            if (currentProgress < 0.1 || currentProgress > 0.85) return;
+            touchStartY = e.touches[0].clientY;
+            touchHandled = false;
+          };
           
+          const handleTouchMove = (e: TouchEvent) => {
+            const currentProgress = cinematicProgress.get();
+            if (currentProgress < 0.1 || currentProgress > 0.85) return;
+            
+            const deltaY = touchStartY - e.touches[0].clientY;
+            const step = deltaY > 0 ? 1 : -1;
+            const currentIdx = clampedActiveIndex;
+            const maxIndex = galleryItems.length - 1;
+            
+            // Allow free swipe when leaving Carousel downwards
+            if (currentIdx === maxIndex && step > 0) return;
+            
+            // Allow free swipe when leaving Carousel upwards
+            if (currentIdx <= 0 && step < 0) return;
+
+            e.preventDefault();
+            
+            if (touchHandled || isSnappingRef.current) return;
+            if (Date.now() - snapCooldownRef.current < 500) return;
+            
+            if (Math.abs(deltaY) < 30) return; // Minimum swipe distance
+            
+            touchHandled = true;
+            
+            const newIndex = currentIdx + step;
+            const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
+            
+            if (clampedNewIndex !== currentIdx) {
+              setClampedActiveIndex(clampedNewIndex);
+              if (clampedNewIndex >= 0) {
+                doSnap(clampedNewIndex, false);
+              } else {
+                const st = ScrollTrigger.getById("galleryTrigger");
+                if (st) {
+                  lenis.scrollTo(st.start - window.innerHeight * 0.5, { duration: 1 });
+                }
+              }
+            } else if (newIndex > maxIndex) {
+              // Now handled by free scroll
+            } else if (newIndex < -1) {
+              // Now handled by free scroll
+            }
+          };
+
+          window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+          window.addEventListener('touchstart', handleTouchStart, { passive: true, capture: true });
+          window.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+
           return () => {
-            lenis.off('scroll', handleScroll);
+            window.removeEventListener('wheel', handleWheel, { capture: true });
+            window.removeEventListener('touchstart', handleTouchStart, { capture: true });
+            window.removeEventListener('touchmove', handleTouchMove, { capture: true });
             if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
           };
           
@@ -493,22 +699,38 @@ export function ArchiveGallery() {
           // sehingga scroll HANYA bergerak lewat doSnap() yang kita kontrol.
           
           const handleWheel = (e: WheelEvent) => {
+            const currentProgress = cinematicProgress.get();
+            const st = ScrollTrigger.getById("galleryTrigger");
+            const currentScrollY = (window as any).lenis?.scroll || window.scrollY;
+            
+            // Allow native scroll if user is below the gallery
+            if (currentProgress < 0.9460 || !st || currentScrollY > st.end + 50) return;
+
+            const step = e.deltaY > 0 ? 1 : -1;
+            const currentIdx = wallIndexRef.current;
+            
+            // Allow free scroll when leaving Wall Phase upwards
+            if (currentIdx <= 0 && step < 0) return;
+
             e.preventDefault();
             e.stopImmediatePropagation();
             
             if (isSnappingRef.current) return;
-            if (Date.now() - snapCooldownRef.current < 500) return;
+            if (Date.now() - snapCooldownRef.current < 150) return;
             
-            const step = e.deltaY > 0 ? 1 : -1;
-            const currentIdx = wallIndexRef.current;
+            const maxIndex = HERO_PROCESS_ITEMS.length - 1;
             const newIndex = currentIdx + step;
-            const maxIndex = HERO_PROCESS_ITEMS.length;
-            const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
+            const clampedNewIndex = Math.max(0, Math.min(maxIndex, newIndex));
             
             if (clampedNewIndex !== currentIdx) {
               wallIndexRef.current = clampedNewIndex;
               setClampedWallIndex(clampedNewIndex);
               doSnap(clampedNewIndex, true);
+            } else if (newIndex > maxIndex) {
+              const st = ScrollTrigger.getById("galleryTrigger");
+              if (st) {
+                lenis.scrollTo(st.end + window.innerHeight * 0.5, { duration: 1 });
+              }
             }
           };
           
@@ -517,32 +739,53 @@ export function ArchiveGallery() {
           let touchHandled = false;
           
           const handleTouchStart = (e: TouchEvent) => {
+            const currentProgress = cinematicProgress.get();
+            const st = ScrollTrigger.getById("galleryTrigger");
+            const currentScrollY = (window as any).lenis?.scroll || window.scrollY;
+            
+            if (currentProgress < 0.9460 || !st || currentScrollY > st.end + 50) return;
+            
             touchStartY = e.touches[0].clientY;
             touchHandled = false;
           };
           
           const handleTouchMove = (e: TouchEvent) => {
+            const currentProgress = cinematicProgress.get();
+            const st = ScrollTrigger.getById("galleryTrigger");
+            const currentScrollY = (window as any).lenis?.scroll || window.scrollY;
+            
+            if (currentProgress < 0.9460 || !st || currentScrollY > st.end + 50) return;
+
+            const deltaY = touchStartY - e.touches[0].clientY;
+            const step = deltaY > 0 ? 1 : -1;
+            const currentIdx = wallIndexRef.current;
+            
+            // Allow free swipe when leaving Wall Phase upwards
+            if (currentIdx <= 0 && step < 0) return;
+
             // Blokir scroll native selama wall phase
             e.preventDefault();
             
             if (touchHandled || isSnappingRef.current) return;
-            if (Date.now() - snapCooldownRef.current < 500) return;
+            if (Date.now() - snapCooldownRef.current < 150) return;
             
-            const deltaY = touchStartY - e.touches[0].clientY;
             if (Math.abs(deltaY) < 30) return; // Minimum swipe distance
             
             touchHandled = true;
             
-            const step = deltaY > 0 ? 1 : -1;
-            const currentIdx = wallIndexRef.current;
+            const maxIndex = HERO_PROCESS_ITEMS.length - 1;
             const newIndex = currentIdx + step;
-            const maxIndex = HERO_PROCESS_ITEMS.length;
-            const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
+            const clampedNewIndex = Math.max(0, Math.min(maxIndex, newIndex));
             
             if (clampedNewIndex !== currentIdx) {
               wallIndexRef.current = clampedNewIndex;
               setClampedWallIndex(clampedNewIndex);
               doSnap(clampedNewIndex, true);
+            } else if (newIndex > maxIndex) {
+              const st = ScrollTrigger.getById("galleryTrigger");
+              if (st) {
+                lenis.scrollTo(st.end + window.innerHeight * 0.5, { duration: 1 });
+              }
             }
           };
           
@@ -672,10 +915,10 @@ export function ArchiveGallery() {
               <AnimatePresence mode="popLayout">
                 <motion.div
                   key={activeItem.id}
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                   style={{ willChange: "transform, opacity" }}
                   className="flex flex-col items-start w-full"
                 >
@@ -788,127 +1031,38 @@ export function ArchiveGallery() {
               willChange: "transform, opacity"
             }}
           >
-            {/* Static UI for Active Project Description (Kanan Tengah - WALL PHASE) */}
             <div className="absolute bottom-8 md:bottom-auto md:top-1/2 md:-translate-y-1/2 left-6 md:left-auto right-6 md:right-12 lg:right-24 pointer-events-auto flex flex-col items-start md:items-end text-left md:text-right w-auto md:w-[600px] scale-90 md:scale-100 origin-bottom-left md:origin-right z-20">
-              <AnimatePresence mode="popLayout">
-                <motion.div
-                  key={activeItem.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  style={{ willChange: "transform, opacity" }}
-                  className="flex flex-col items-start md:items-end"
-                >
-                  <div className="flex w-full justify-between items-start pl-0 md:pl-20">
-                    {/* Main Content Area */}
-                    <div className="flex flex-col items-start text-left flex-1 max-w-2xl">
-                      
-                      {/* Chapter Header */}
-                      <div className={`hidden md:flex items-center gap-3 md:gap-4 ${activeItem.themeColor || 'text-white'} mb-3 md:mb-6`}>
-                        <span className="font-mono text-sm tracking-widest uppercase font-bold">
-                          CHAPTER {activeItem.id}
-                        </span>
-                        <div className={`h-[1px] w-12 md:w-32 bg-current opacity-50 relative`}>
-                          <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full ${activeItem.themeBg || 'bg-white'} ${activeItem.themeShadow ? 'shadow-[0_0_8px]' : ''} ${activeItem.themeShadow || ''}`} />
-                        </div>
-                      </div>
+              <div className="flex w-full justify-between items-start pl-0 md:pl-20">
+                {/* Main Content Area - Overlapping scroll-mapped items */}
+                <div className="relative flex-1 max-w-2xl min-h-[350px] md:min-h-[450px]">
+                  {HERO_PROCESS_ITEMS.map((item, index) => (
+                    <WallPhaseItemText 
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      cinematicProgress={cinematicProgress}
+                    />
+                  ))}
+                </div>
 
-                      {/* Title Image/Text */}
-                      {activeItem.wallTitle === "CAPTAIN AMERICA X NEXT.JS" ? (
-                        <img 
-                          src="/images/fonts/CAPTAINAMERICAFONT.png" 
-                          alt="CAPTAIN AMERICA X NEXT.JS" 
-                          className="h-8 md:h-12 lg:h-16 mb-2 md:mb-6 object-contain drop-shadow-2xl origin-left" 
-                        />
-                      ) : activeItem.wallTitle === "IRONMAN X VS CODE" ? (
-                        <img 
-                          src="/images/fonts/IRONMANFONT.png" 
-                          alt="IRONMAN X VS CODE" 
-                          className="h-8 md:h-12 lg:h-16 mb-2 md:mb-6 object-contain drop-shadow-2xl origin-left" 
-                        />
-                      ) : activeItem.wallTitle === "SPIDERMAN X TAILWIND CSS" ? (
-                        <img 
-                          src="/images/fonts/SPIDERMANFONT.png" 
-                          alt="SPIDERMAN X TAILWIND CSS" 
-                          className="h-8 md:h-12 lg:h-16 mb-2 md:mb-6 object-contain drop-shadow-2xl origin-left" 
-                        />
-                      ) : (
-                        <h3 className="font-bold mb-2 md:mb-6 uppercase tracking-widest leading-none drop-shadow-2xl text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-syne text-white shadow-black">
-                          {activeItem.wallTitle || activeItem.title}
-                        </h3>
-                      )}
-
-                      {/* Subtitle */}
-                      <div className={`flex items-center gap-2 md:gap-4 ${activeItem.themeColor || 'text-white'} mb-3 md:mb-8`}>
-                        <div className="hidden md:block w-8 h-[1px] bg-current" />
-                        <span className="font-mono tracking-[0.1em] md:tracking-[0.2em] uppercase text-[10px] md:text-sm font-bold">
-                          {activeItem.wallType || activeItem.type}
-                        </span>
-                      </div>
-
-                      {/* Description Block */}
-                      <div className="flex flex-col md:flex-row gap-3 md:gap-6 mb-3 md:mb-6 items-start md:items-stretch">
-                        {/* Hexagon Icon */}
-                        <div className="hidden md:flex relative w-12 h-12 md:w-16 md:h-16 items-center justify-center flex-shrink-0">
-                          <svg viewBox="0 0 100 100" className={`absolute inset-0 w-full h-full ${activeItem.themeColor || 'text-white'} opacity-80`} fill="none" stroke="currentColor" strokeWidth="2">
-                            <polygon points="50 3, 93 25, 93 75, 50 97, 7 75, 7 25" />
-                          </svg>
-                          {activeItem.icon ? (
-                            <activeItem.icon size={24} className={`${activeItem.themeColor || 'text-white'}`} />
-                          ) : (
-                            <Code size={24} className={`${activeItem.themeColor || 'text-white'}`} />
-                          )}
-                        </div>
-                        
-                        {/* Vertical Line */}
-                        <div className="hidden md:block w-[1px] bg-white/20 self-stretch" />
-                        
-                        {/* Text */}
-                        <div className="text-[10px] sm:text-[11px] md:text-[13px] text-white/80 md:text-white/80 leading-relaxed whitespace-pre-wrap max-w-sm md:max-w-none drop-shadow-md">
-                          {activeItem.wallDesc || activeItem.desc}
-                        </div>
-                      </div>
-
-                      {/* Quote Block */}
-                      {activeItem.quote && (
-                        <div className="hidden md:flex gap-3 md:gap-4 mt-2">
-                          <span className={`text-4xl md:text-5xl font-serif ${activeItem.themeColor || 'text-white'} opacity-30 leading-none mt-1`}>
-                            "
-                          </span>
-                          <p className="text-[11px] md:text-xs text-white/70 mt-2 leading-relaxed max-w-md">
-                            {activeItem.quote.text.split(new RegExp(`(${activeItem.quote.highlights.join('|')})`, 'gi')).map((part: string, i: number) => {
-                              if (activeItem.quote.highlights.some((h: string) => h.toLowerCase() === part.toLowerCase())) {
-                                return <span key={i} className={`${activeItem.themeColor || 'text-white'} font-bold`}>{part}</span>;
-                              }
-                              return part;
-                            })}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Pagination Side Bar */}
-                    <div className="hidden md:flex flex-col items-center justify-between h-[250px] md:h-[300px] font-mono text-white/50 ml-6 md:ml-12 border-l border-white/10 pl-4 md:pl-6 py-2">
-                      <span className="text-xs md:text-[10px] font-bold tracking-widest">01</span>
-                      <div className="flex flex-col items-center gap-6 my-4 flex-1 justify-center">
-                        {HERO_PROCESS_ITEMS.map((_, i) => (
-                          <div 
-                            key={i} 
-                            className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
-                              i === activeIndex 
-                                ? `${activeItem.themeBg || 'bg-white'} ${activeItem.themeShadow ? 'shadow-[0_0_8px]' : ''} ${activeItem.themeShadow || ''} scale-150` 
-                                : 'bg-white/20'
-                            }`} 
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs md:text-[10px] font-bold tracking-widest">0{HERO_PROCESS_ITEMS.length}</span>
-                    </div>
+                {/* Pagination Side Bar */}
+                <div className="hidden md:flex flex-col items-center justify-between h-[250px] md:h-[300px] font-mono text-white/50 ml-6 md:ml-12 border-l border-white/10 pl-4 md:pl-6 py-2">
+                  <span className="text-xs md:text-[10px] font-bold tracking-widest">01</span>
+                  <div className="flex flex-col items-center gap-6 my-4 flex-1 justify-center">
+                    {HERO_PROCESS_ITEMS.map((item, i) => (
+                      <div 
+                        key={i} 
+                        className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
+                          i === clampedWallIndex 
+                            ? `${item.themeBg || 'bg-white'} ${item.themeShadow ? 'shadow-[0_0_8px]' : ''} ${item.themeShadow || ''} scale-150` 
+                            : 'bg-white/20'
+                        }`} 
+                      />
+                    ))}
                   </div>
-
-                </motion.div>
-              </AnimatePresence>
+                  <span className="text-xs md:text-[10px] font-bold tracking-widest">0{HERO_PROCESS_ITEMS.length}</span>
+                </div>
+              </div>
             </div>
           </motion.div>
 

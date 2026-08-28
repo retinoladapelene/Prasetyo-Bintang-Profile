@@ -30,7 +30,7 @@ voice_state = None
 
 # Use a relative path so it works on cloud servers (Render)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_VOICE = os.path.join(BASE_DIR, "voice_samples", "rekaman_saya_processed.wav")
+DEFAULT_VOICE = os.path.join(BASE_DIR, "voice_samples", "training_voice.wav")
 
 @app.on_event("startup")
 async def startup_event():
@@ -77,12 +77,12 @@ async def generate_audio(req: TTSRequest):
         
         # 1. NOISE REDUCTION
         # Remove background hiss/wind noise cloned from the original mic recording
-        try:
-            import noisereduce as nr
-            # Perform noise reduction
-            audio_np = nr.reduce_noise(y=audio_np, sr=tts_model.sample_rate, prop_decrease=0.8)
-        except ImportError:
-            logger.warning("noisereduce library not found, skipping noise reduction")
+        # try:
+        #     import noisereduce as nr
+        #     # Perform noise reduction
+        #     audio_np = nr.reduce_noise(y=audio_np, sr=tts_model.sample_rate, prop_decrease=0.8)
+        # except ImportError:
+        #     logger.warning("noisereduce library not found, skipping noise reduction")
             
         # 2. DYNAMIC VOLUME BOOST
         # Use the 99th percentile for normalization to ignore random loud peaks/clicks

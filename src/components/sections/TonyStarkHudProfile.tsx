@@ -22,6 +22,7 @@ import {
   X,
   MessageSquare,
   Volume2,
+  Send,
 } from "lucide-react";
 import { useVoiceAssistant } from "@/hooks/useVoiceAssistant";
 
@@ -448,14 +449,31 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
     setMousePos({ x: 0, y: 0 });
   };
 
-  const { isListening, isSpeaking, isProcessing, transcript, startListening } = useVoiceAssistant();
+  const { isListening, isSpeaking, isProcessing, transcript, error, startListening, sendTextMessage, chatHistory, userName } = useVoiceAssistant();
+
+  const [isAssistantActive, setIsAssistantActive] = useState(false);
+  const [textInput, setTextInput] = useState("");
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto scroll to bottom of chat
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatHistory, isProcessing, isSpeaking]);
+
+  const handleTextSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!textInput.trim() || isProcessing) return;
+    sendTextMessage(textInput);
+    setTextInput("");
+  };
 
   const mx = mousePos.x;
   const my = mousePos.y;
 
-  const hudOpacity = isVoiceMode ? 0 : 1;
-  const hudPointerEvents = isVoiceMode ? "none" : "auto";
-
+  const hudOpacity = isAssistantActive ? 0 : 1;
+  const hudPointerEvents = isAssistantActive ? "none" : "auto";
 
   const jarvisSpeech = useTransform(smoothProgress, (val): string => {
     if (activeCategory === "experience") return "MEMUAT ARSIP PENGALAMAN KERJA DAN KONTRIBUSI PROFESIONAL.";
@@ -973,95 +991,132 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
           fromY={35}
           className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-8 sm:right-8 z-30 pointer-events-none"
         >
-          <Panel3D mouseX={mx} mouseY={my} depth={0.38}
-            className="flex items-center justify-center"
-          >
+          <div className="flex items-end justify-end pointer-events-none w-full h-full">
             <AnimatePresence mode="wait">
-              {isVoiceMode ? (
+              {isAssistantActive ? (
                 <motion.div
-                  key="voice-dashboard"
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                  key="chat-dashboard"
+                  initial={{ opacity: 0, x: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: 20, scale: 0.95 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className={`flex items-center gap-4 text-[var(--foreground)] w-full max-w-3xl px-6 py-4 rounded-2xl border bg-[var(--background)]/80 backdrop-blur-xl pointer-events-auto transition-all duration-300 ${isListening
-                    ? 'border-red-500/80 shadow-[0_0_30px_rgba(239,68,68,0.3)] animate-pulse'
+                  className={`flex flex-col gap-4 text-[var(--foreground)] w-full max-w-[340px] px-5 py-4 rounded-2xl border bg-[var(--background)]/85 backdrop-blur-xl pointer-events-auto shadow-2xl transition-all duration-300 ${isListening
+                    ? 'border-red-500/80 shadow-[0_0_40px_rgba(239,68,68,0.3)] animate-pulse'
                     : isSpeaking
-                      ? 'border-green-500/80 shadow-[0_0_30px_rgba(34,197,94,0.3)]'
+                      ? 'border-green-500/80 shadow-[0_0_40px_rgba(34,197,94,0.3)]'
                       : isProcessing
-                        ? 'border-blue-500/80 shadow-[0_0_30px_rgba(59,130,246,0.3)]'
-                        : 'border-[var(--theme-primary)]/40 shadow-[0_0_30px_rgb(var(--theme-primary-rgb)/0.2)]'
+                        ? 'border-blue-500/80 shadow-[0_0_40px_rgba(59,130,246,0.3)]'
+                        : 'border-[var(--theme-primary)]/50 shadow-[0_0_40px_rgb(var(--theme-primary-rgb)/0.3)]'
                     }`}
                 >
-                  <div className="relative flex items-center justify-center group cursor-pointer" onClick={startListening}>
-                    {!isSpeaking && !isListening && !isProcessing && (
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--theme-primary)] opacity-40 animate-ping pointer-events-none" />
+                  {/* Chat History Section */}
+                  <div
+                    ref={chatScrollRef}
+                    data-lenis-prevent="true"
+                    className="flex-1 max-h-[300px] min-h-[150px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-[var(--theme-primary)]/50 scrollbar-track-transparent"
+                  >
+                    {chatHistory.length === 0 ? (
+                      <div className="flex items-center justify-center h-full text-[var(--foreground)]/50 italic text-xs">
+                        Mulai percakapan dengan mengetik atau berbicara...
+                      </div>
+                    ) : (
+                      chatHistory.map((msg, idx) => (
+                        <div
+                          key={idx}
+                          className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                        >
+                          <span className={`text-[9px] uppercase font-bold tracking-wider mb-1 opacity-50 ${msg.role === 'user' ? 'mr-1' : 'ml-1 text-[var(--theme-primary)]'}`}>
+                            {msg.role === 'user' ? 'Anda' : 'Bintang AI'}
+                          </span>
+                          <div className={`px-4 py-2 rounded-2xl max-w-[90%] text-xs leading-relaxed ${
+                            msg.role === 'user' 
+                            ? 'bg-[var(--foreground)]/10 text-[var(--foreground)] rounded-tr-sm' 
+                            : 'bg-[var(--theme-primary)]/10 text-[var(--foreground)] border border-[var(--theme-primary)]/30 rounded-tl-sm'
+                          }`}>
+                            {msg.content}
+                          </div>
+                        </div>
+                      ))
                     )}
+                    
+                    {/* Status Indicators (Listening/Processing/Speaking) */}
+                    {(isListening || isProcessing || isSpeaking) && (
+                      <div className="flex flex-col items-start mt-4">
+                        <span className={`text-[10px] uppercase font-bold tracking-wider mb-1 ml-1 ${
+                          isListening ? 'text-red-500' : isProcessing ? 'text-blue-500' : 'text-green-500'
+                        }`}>
+                          System Status
+                        </span>
+                        <div className="flex items-center gap-3 px-4 py-2 bg-[var(--background)]/50 rounded-2xl border border-[var(--foreground)]/10 rounded-tl-sm">
+                          {isListening ? (
+                            <><MicOff size={16} className="text-red-500 animate-pulse" /><span className="text-sm italic text-red-500">Mendengarkan...</span></>
+                          ) : isProcessing ? (
+                            <><Brain size={16} className="text-blue-500 animate-pulse" /><span className="text-sm italic text-blue-500">Sedang memproses...</span></>
+                          ) : isSpeaking ? (
+                            <><Volume2 size={16} className="text-green-500 animate-pulse" /><span className="text-sm italic text-green-500">Menjawab...</span></>
+                          ) : null}
+                          
+                          {/* Equalizer animation for speaking */}
+                          {isSpeaking && (
+                            <div className="flex items-center gap-1 ml-2 h-4">
+                              {[8, 14, 7, 18, 11].map((h, i) => (
+                                <motion.span
+                                  key={i}
+                                  animate={{ height: [h*0.3, h, h*0.3] }}
+                                  transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
+                                  className="w-1 bg-green-500 rounded-full"
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Input Section */}
+                  <div className="flex items-center gap-3 pt-2 border-t border-[var(--foreground)]/10">
+                    <form onSubmit={handleTextSubmit} className="flex-1 relative">
+                      <input
+                        type="text"
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
+                        placeholder={isListening ? "Sedang merekam suara..." : isProcessing ? "Tunggu sebentar..." : "Ketik pesan Anda di sini..."}
+                        disabled={isListening || isProcessing}
+                        className="w-full bg-[var(--foreground)]/5 border border-[var(--foreground)]/20 rounded-full py-3 px-5 text-sm text-[var(--foreground)] placeholder:text-[var(--foreground)]/40 focus:outline-none focus:border-[var(--theme-primary)]/50 focus:bg-[var(--foreground)]/10 transition-all disabled:opacity-50"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!textInput.trim() || isProcessing || isListening}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full text-[var(--foreground)]/50 hover:text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/10 transition-colors disabled:opacity-30"
+                      >
+                        <Send size={18} />
+                      </button>
+                    </form>
+
+                    <div className="h-10 w-px bg-[var(--foreground)]/10 mx-1" />
+
                     <button
-                      className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 pointer-events-auto ${isListening
-                        ? 'border-red-500 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.8)] bg-red-500/10 scale-110'
-                        : isProcessing
-                          ? 'border-blue-500 text-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.8)] bg-blue-500/10'
-                          : isSpeaking
-                            ? 'border-green-500 text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.8)] bg-green-500/10'
-                            : 'border-[var(--theme-primary)] text-[var(--theme-primary)] shadow-[0_0_20px_rgb(var(--theme-primary-rgb)/0.8)] bg-[var(--theme-primary)]/10 hover:bg-[var(--theme-primary)]/30 hover:scale-110'
-                        }`}
+                      onClick={startListening}
+                      disabled={isProcessing}
+                      className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border transition-all duration-300 disabled:opacity-50 ${isListening
+                        ? 'border-red-500 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.8)] bg-red-500/10'
+                        : isSpeaking
+                          ? 'border-green-500 text-green-500 shadow-[0_0_15px_rgba(34,197,94,0.8)] bg-green-500/10'
+                          : 'border-[var(--theme-primary)] text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/10 hover:scale-105'
+                      }`}
                     >
-                      <div className={`absolute inset-0.5 rounded-full border-2 border-dashed ${isListening ? 'border-red-500/80 animate-[spin_2s_linear_infinite]' :
-                        isProcessing ? 'border-blue-500/80 animate-[spin_1s_linear_infinite]' :
-                          isSpeaking ? 'border-green-500/80 animate-[spin_3s_linear_infinite]' :
-                            'border-[rgb(var(--theme-primary-rgb)/0.8)] animate-[spin_4s_linear_infinite]'
-                        }`} />
-                      {isListening ? <MicOff size={24} /> : isProcessing ? <Brain size={24} className="animate-pulse" /> : isSpeaking ? <Volume2 size={24} /> : <Mic size={24} />}
+                      {isListening ? <MicOff size={20} className="animate-pulse" /> : <Mic size={20} />}
+                    </button>
+
+                    <button
+                      onClick={() => setIsAssistantActive(false)}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--foreground)]/30 text-[var(--foreground)]/60 hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/50 transition-all ml-1"
+                      title="Tutup AI Assistant"
+                    >
+                      <X size={18} />
                     </button>
                   </div>
-
-                  <div className="min-w-0 flex-1 flex flex-col justify-center">
-                    <span className={`text-[12px] font-black uppercase tracking-[0.16em] mb-1 ${isListening ? 'text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]' :
-                      isProcessing ? 'text-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]' :
-                        isSpeaking ? 'text-green-500 drop-shadow-[0_0_10px_rgba(34,197,94,0.8)]' :
-                          'text-[var(--theme-primary)] drop-shadow-[0_0_10px_var(--theme-primary)]'
-                      }`}>
-                      {isListening ? 'SILAKAN BICARA SEKARANG...' :
-                        isProcessing ? 'SAYA SEDANG BERPIKIR...' :
-                          isSpeaking ? 'SAYA SEDANG MENJAWAB...' :
-                            'KLIK TOMBOL MIC UNTUK BERTANYA'}
-                    </span>
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={isListening ? "listen" : isProcessing ? "process" : isSpeaking ? "speak" : (activeCategory ?? "default")}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        className="min-w-0 truncate text-[14px] leading-relaxed text-[var(--foreground)] drop-shadow-[0_0_8px_var(--foreground)] font-semibold"
-                      >
-                        {isListening ? "I'm all ears, ask me..." :
-                          isProcessing ? "Menganalisa suara Anda..." :
-                            isSpeaking ? "[ Saya sedang berbicara ]" :
-                              (transcript) ? `Anda: "${transcript}"` :
-                                "Halo, saya Prasetyo. Ask me anything?"}
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
-
-                  <div className={`hidden items-center gap-1.5 sm:flex transition-opacity duration-300 ${isSpeaking ? 'opacity-100' : 'opacity-40'}`}>
-                    {[8, 14, 7, 18, 11, 22, 8, 15, 20, 10, 16, 11, 24, 13, 7, 18].map((height, index) => (
-                      <motion.span
-                        key={index}
-                        animate={{ height: isSpeaking ? [height * 0.5, height * 1.5, height * 0.5] : [height * 0.35, height, height * 0.5] }}
-                        transition={{ duration: isSpeaking ? 0.4 : 0.7, repeat: Infinity, repeatType: "mirror", delay: index * 0.04 }}
-                        className={`w-1 rounded-full shadow-[0_0_8px_var(--theme-primary)] ${isSpeaking ? 'bg-green-400' : 'bg-[var(--theme-primary)]'}`}
-                      />
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => setIsVoiceMode(false)}
-                    className="ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--foreground)]/30 text-[var(--foreground)]/60 hover:bg-[var(--foreground)]/10 hover:text-[var(--foreground)] transition-all pointer-events-auto"
-                    title="Close Voice Mode"
-                  >
-                    <X size={20} strokeWidth={2.5} />
-                  </button>
                 </motion.div>
               ) : (
                 <motion.div
@@ -1072,7 +1127,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   className="pointer-events-auto"
                 >
                   <button
-                    onClick={() => setIsVoiceMode(true)}
+                    onClick={() => setIsAssistantActive(true)}
                     className="group flex items-center gap-3 rounded-full border border-[var(--theme-primary)]/50 bg-[var(--background)]/60 backdrop-blur-md px-6 py-3 text-[12px] font-bold uppercase tracking-widest text-[var(--theme-primary)] transition-all hover:bg-[var(--theme-primary)]/20 hover:scale-105 hover:shadow-[0_0_20px_rgb(var(--theme-primary-rgb)/0.4)]"
                   >
                     <MessageSquare size={16} className="animate-pulse" />
@@ -1081,7 +1136,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                 </motion.div>
               )}
             </AnimatePresence>
-          </Panel3D>
+          </div>
         </AnimatedHudElement>
       </motion.div>
     </motion.div>

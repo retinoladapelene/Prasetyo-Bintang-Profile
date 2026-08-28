@@ -1830,7 +1830,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
       }
 
       // Morph the background to J-curve (grid and text morph together)
-      const perspectiveMorph = Math.min(Math.max((smoothedScroll - 0.81) / 0.08, 0), 1);
+      // Dipanjangkan menjadi 0.83 - 0.94 (jarak 0.11) agar jauh lebih lambat dan sejalan dengan scroll
+      const perspectiveMorph = Math.min(Math.max((smoothedScroll - 0.83) / 0.11, 0), 1);
 
       // Video background is delayed until 0.94 (after blackout fades)
       const ironmanVideoBlend = Math.min(Math.max((smoothedScroll - 0.94) / 0.02, 0), 1);

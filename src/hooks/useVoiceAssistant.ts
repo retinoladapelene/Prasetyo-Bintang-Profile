@@ -43,7 +43,7 @@ export function useVoiceAssistant() {
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const handleVoiceInput = useCallback(async (text: string) => {
+  const handleInput = useCallback(async (text: string, useVoice: boolean) => {
     if (!text || !text.trim()) {
       setIsListening(false);
       return;
@@ -94,6 +94,12 @@ export function useVoiceAssistant() {
         };
         
         await audioRef.current.play();
+        return;
+      }
+
+      // Jika dalam mode teks, lewati pembuatan audio TTS
+      if (!useVoice) {
+        setIsProcessing(false);
         return;
       }
 
@@ -163,7 +169,7 @@ export function useVoiceAssistant() {
           const currentTranscript = event.results[0][0].transcript;
           setTranscript(currentTranscript);
           setIsListening(false);
-          await handleVoiceInput(currentTranscript);
+          await handleInput(currentTranscript, true); // Voice mode
         };
 
         recognitionRef.current.onerror = (event: any) => {
@@ -188,7 +194,12 @@ export function useVoiceAssistant() {
         audioRef.current.pause();
       }
     };
-  }, [handleVoiceInput]);
+  }, [handleInput]);
+
+  const sendTextMessage = useCallback(async (text: string) => {
+    setTranscript(text);
+    await handleInput(text, false); // Text mode
+  }, [handleInput]);
 
   const startListening = useCallback(() => {
     setError(null);
@@ -228,6 +239,8 @@ export function useVoiceAssistant() {
     transcript,
     error,
     startListening,
+    sendTextMessage,
+    chatHistory,
     userName,
   };
 }

@@ -116,7 +116,7 @@ export default function PersonalPage() {
 
         <div className="relative -mt-[100vh]">
           <EditorialIntro mounted={mounted && !isLoading} currentTime={currentTime} />
-          <section className="relative h-[1000vh] w-full overflow-hidden bg-transparent" />
+          <section className="relative h-[1000vh] w-full overflow-hidden bg-transparent pointer-events-none" />
         </div>
       </div>
 
