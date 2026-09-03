@@ -401,7 +401,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
   const [activeCategory, setActiveCategory] = useState<ActiveCategory>(null);
   const [clockTime, setClockTime] = useState("23:46:21");
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isAssistantActive, setIsAssistantActive] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -437,6 +437,22 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
     return () => clearInterval(timer);
   }, []);
 
+  // Lock scrolling when assistant is active
+  useEffect(() => {
+    if (isAssistantActive) {
+      document.body.style.overflow = 'hidden';
+      if ((window as any).lenis) (window as any).lenis.stop();
+    } else {
+      document.body.style.overflow = '';
+      if ((window as any).lenis) (window as any).lenis.start();
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+      if ((window as any).lenis) (window as any).lenis.start();
+    };
+  }, [isAssistantActive]);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -449,9 +465,8 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
     setMousePos({ x: 0, y: 0 });
   };
 
-  const { isListening, isSpeaking, isProcessing, transcript, error, startListening, sendTextMessage, chatHistory, userName } = useVoiceAssistant();
+  const { isListening, isSpeaking, isProcessing, transcript, error, startListening, sendTextMessage, chatHistory, userName, language, setLanguage } = useVoiceAssistant();
 
-  const [isAssistantActive, setIsAssistantActive] = useState(false);
   const [textInput, setTextInput] = useState("");
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
@@ -515,7 +530,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
             className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6 lg:right-28 lg:top-8 pointer-events-none"
           >
             <Panel3D mouseX={mx} mouseY={my} depth={0.32} className="flex items-center gap-3">
-              <div className="flex items-center gap-2 sm:gap-4 rounded-full border border-[var(--foreground)]/20 bg-[var(--background)]/70 px-3 py-1 sm:px-4 sm:py-1.5 text-[8px] sm:text-[10px] uppercase tracking-[0.16em] text-[var(--foreground)] drop-shadow-[0_0_10px_rgb(var(--theme-primary-rgb)/0.4)] backdrop-blur-md">
+              <div className="flex items-center gap-2 sm:gap-4 rounded-full border border-[var(--foreground)]/20 bg-[var(--background)]/95 md:bg-[var(--background)]/70 px-3 py-1 sm:px-4 sm:py-1.5 text-[8px] sm:text-[10px] uppercase tracking-[0.16em] text-[var(--foreground)] drop-shadow-[0_0_10px_rgb(var(--theme-primary-rgb)/0.4)] md:backdrop-blur-md">
                 <span><b className="text-[var(--theme-primary)]">CLOCK</b> {clockTime}</span>
                 <span><b className="text-[var(--theme-primary)]">NET</b> <span className="font-bold text-[var(--theme-primary)]">STABLE</span></span>
               </div>
@@ -537,7 +552,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
           className="absolute left-4 right-4 top-[60px] z-30 flex flex-col gap-3 lg:gap-4 lg:right-auto lg:left-8 xl:left-12 lg:w-[310px] xl:w-[330px] pointer-events-none"
           animate={{ opacity: hudOpacity }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          style={{ pointerEvents: isVoiceMode ? "none" : undefined }}
+          style={{ pointerEvents: isAssistantActive ? "none" : undefined }}
         >
           <Panel3D mouseX={mx} mouseY={my} depth={0.35}>
             <div className="space-y-0.5">
@@ -618,9 +633,9 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                       onMouseEnter={() => handleNodeEnter(category.id)}
                       onFocus={() => handleNodeEnter(category.id)}
                       onClick={() => activeCategory === category.id ? setActiveCategory(null) : handleNodeEnter(category.id)}
-                      className={`group flex w-[200px] shrink-0 snap-start lg:w-full items-center gap-3 rounded-xl border px-3 py-2 lg:px-3.5 lg:py-2.5 text-left transition-all cursor-pointer backdrop-blur-md ${isActive
+                      className={`group flex w-[200px] shrink-0 snap-start lg:w-full items-center gap-3 rounded-xl border px-3 py-2 lg:px-3.5 lg:py-2.5 text-left transition-all cursor-pointer md:backdrop-blur-md ${isActive
                         ? "border-[var(--theme-primary)] bg-[rgb(var(--theme-primary-rgb)/0.15)] shadow-[0_0_22px_rgb(var(--theme-primary-rgb)/0.5)] scale-[1.02]"
-                        : "border-[var(--foreground)]/20 bg-[var(--background)]/70 hover:border-[var(--theme-primary)]/70 hover:bg-[var(--background)]/90 hover:shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.35)]"
+                        : "border-[var(--foreground)]/20 bg-[var(--background)]/95 md:bg-[var(--background)]/70 hover:border-[var(--theme-primary)]/70 hover:bg-[var(--background)]/90 hover:shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.35)]"
                         }`}
                     >
                       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all ${isActive
@@ -656,7 +671,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
           onMouseLeave={handleNodesLeave}
           animate={{ opacity: hudOpacity }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
-          style={{ pointerEvents: isVoiceMode ? "none" : undefined }}
+          style={{ pointerEvents: isAssistantActive ? "none" : undefined }}
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -991,7 +1006,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
           fromY={35}
           className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-8 sm:right-8 z-30 pointer-events-none"
         >
-          <div className="flex items-end justify-end pointer-events-none w-full h-full">
+          <div className="relative pointer-events-none w-full h-full">
             <AnimatePresence mode="wait">
               {isAssistantActive ? (
                 <motion.div
@@ -1000,7 +1015,9 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   animate={{ opacity: 1, x: 0, scale: 1 }}
                   exit={{ opacity: 0, x: 20, scale: 0.95 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className={`flex flex-col gap-4 text-[var(--foreground)] w-full max-w-[340px] px-5 py-4 rounded-2xl border bg-[var(--background)]/85 backdrop-blur-xl pointer-events-auto shadow-2xl transition-all duration-300 ${isListening
+                  onWheel={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
+                  onTouchMove={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
+                  className={`absolute bottom-0 right-0 flex flex-col gap-4 text-[var(--foreground)] w-full max-w-[340px] px-5 py-4 rounded-2xl border bg-[var(--background)]/98 md:bg-[var(--background)]/85 md:backdrop-blur-xl pointer-events-auto shadow-2xl transition-all duration-300 ${isListening
                     ? 'border-red-500/80 shadow-[0_0_40px_rgba(239,68,68,0.3)] animate-pulse'
                     : isSpeaking
                       ? 'border-green-500/80 shadow-[0_0_40px_rgba(34,197,94,0.3)]'
@@ -1013,7 +1030,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   <div
                     ref={chatScrollRef}
                     data-lenis-prevent="true"
-                    className="flex-1 max-h-[300px] min-h-[150px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-[var(--theme-primary)]/50 scrollbar-track-transparent"
+                    className="flex-1 max-h-[300px] min-h-[150px] overflow-y-auto overscroll-contain pr-2 space-y-4 scrollbar-thin scrollbar-thumb-[var(--theme-primary)]/50 scrollbar-track-transparent"
                   >
                     {chatHistory.length === 0 ? (
                       <div className="flex items-center justify-center h-full text-[var(--foreground)]/50 italic text-xs">
@@ -1026,7 +1043,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                           className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                         >
                           <span className={`text-[9px] uppercase font-bold tracking-wider mb-1 opacity-50 ${msg.role === 'user' ? 'mr-1' : 'ml-1 text-[var(--theme-primary)]'}`}>
-                            {msg.role === 'user' ? 'Anda' : 'Bintang AI'}
+                            {msg.role === 'user' ? 'Anda' : 'Bintang'}
                           </span>
                           <div className={`px-4 py-2 rounded-2xl max-w-[90%] text-xs leading-relaxed ${
                             msg.role === 'user' 
@@ -1043,15 +1060,19 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                     {(isListening || isProcessing || isSpeaking) && (
                       <div className="flex flex-col items-start mt-4">
                         <span className={`text-[10px] uppercase font-bold tracking-wider mb-1 ml-1 ${
-                          isListening ? 'text-red-500' : isProcessing ? 'text-blue-500' : 'text-green-500'
+                          isListening ? 'text-red-500' : isProcessing ? 'text-[var(--theme-primary)]' : 'text-green-500'
                         }`}>
-                          System Status
+                          {isListening ? 'Bintang sedang mendengarkan' : isProcessing ? 'Bintang sedang mengetik' : 'Bintang sedang berbicara'}
                         </span>
                         <div className="flex items-center gap-3 px-4 py-2 bg-[var(--background)]/50 rounded-2xl border border-[var(--foreground)]/10 rounded-tl-sm">
                           {isListening ? (
                             <><MicOff size={16} className="text-red-500 animate-pulse" /><span className="text-sm italic text-red-500">Mendengarkan...</span></>
                           ) : isProcessing ? (
-                            <><Brain size={16} className="text-blue-500 animate-pulse" /><span className="text-sm italic text-blue-500">Sedang memproses...</span></>
+                            <div className="flex items-center gap-1.5 h-5 px-2">
+                              <motion.div animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0 }} className="w-1.5 h-1.5 rounded-full bg-[var(--theme-primary)]" />
+                              <motion.div animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.2 }} className="w-1.5 h-1.5 rounded-full bg-[var(--theme-primary)]" />
+                              <motion.div animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.4 }} className="w-1.5 h-1.5 rounded-full bg-[var(--theme-primary)]" />
+                            </div>
                           ) : isSpeaking ? (
                             <><Volume2 size={16} className="text-green-500 animate-pulse" /><span className="text-sm italic text-green-500">Menjawab...</span></>
                           ) : null}
@@ -1094,6 +1115,16 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                       </button>
                     </form>
 
+                    <button
+                      type="button"
+                      onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+                      disabled={isProcessing || isListening}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--foreground)]/30 text-[var(--foreground)]/60 hover:bg-[var(--theme-primary)]/20 hover:text-[var(--theme-primary)] hover:border-[var(--theme-primary)]/50 transition-all text-xs font-bold disabled:opacity-50"
+                      title={language === 'id' ? 'Switch to English' : 'Ganti ke Bahasa Indonesia'}
+                    >
+                      {language === 'id' ? 'ID' : 'EN'}
+                    </button>
+
                     <div className="h-10 w-px bg-[var(--foreground)]/10 mx-1" />
 
                     <button
@@ -1121,14 +1152,14 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
               ) : (
                 <motion.div
                   key="ask-button"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className="pointer-events-auto"
+                  initial={{ opacity: 0, y: 20, x: "-50%" }}
+                  animate={{ opacity: 1, y: 0, x: "-50%" }}
+                  exit={{ opacity: 0, y: 20, x: "-50%" }}
+                  className="pointer-events-auto absolute left-1/2 bottom-0"
                 >
                   <button
                     onClick={() => setIsAssistantActive(true)}
-                    className="group flex items-center gap-3 rounded-full border border-[var(--theme-primary)]/50 bg-[var(--background)]/60 backdrop-blur-md px-6 py-3 text-[12px] font-bold uppercase tracking-widest text-[var(--theme-primary)] transition-all hover:bg-[var(--theme-primary)]/20 hover:scale-105 hover:shadow-[0_0_20px_rgb(var(--theme-primary-rgb)/0.4)]"
+                    className="group flex items-center gap-3 rounded-full border border-[var(--theme-primary)]/50 bg-[var(--background)]/95 md:bg-[var(--background)]/60 md:backdrop-blur-md px-6 py-3 text-[12px] font-bold uppercase tracking-widest text-[var(--theme-primary)] transition-all hover:bg-[var(--theme-primary)]/20 hover:scale-105 hover:shadow-[0_0_20px_rgb(var(--theme-primary-rgb)/0.4)]"
                   >
                     <MessageSquare size={16} className="animate-pulse" />
                     Ask me anything

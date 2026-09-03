@@ -241,7 +241,7 @@ function ToolIndicator({ tool, index, side, onHover, theme }: {
             className="relative cursor-default">
             <motion.div animate={{ boxShadow: hovered ? `0 16px 48px -8px ${tool.color}30` : "none", y: hovered ? -3 : 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 28 }}
-                className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-[var(--foreground)]/5 backdrop-blur-xl border border-[var(--foreground)]/10 p-4 md:p-6"
+                className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-[var(--foreground)]/10 md:bg-[var(--foreground)]/5 md:backdrop-blur-xl border border-[var(--foreground)]/10 p-4 md:p-6"
                 style={{ minHeight: hero ? 180 : undefined }}>
                 {/* Tinted background overlay matching hero color */}
                 <motion.div animate={{ opacity: hovered ? 1 : 0 }} className="pointer-events-none absolute inset-0 rounded-2xl md:rounded-3xl"
@@ -675,7 +675,7 @@ export function PaletteTab({ activeThemeId, onThemeChange, isActive }: { activeT
                         style={{ background: `radial-gradient(ellipse at center, ${activeTheme.dot}18 0%, transparent 70%)` }} />
                 </div>
                 <PaletteCanvas activeThemeId={activeThemeId} onColorClick={onThemeChange} isActive={isActive} />
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/75 backdrop-blur-sm border border-purple-100 pointer-events-none whitespace-nowrap">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 md:bg-white/75 md:backdrop-blur-sm border border-purple-100 pointer-events-none whitespace-nowrap">
                     <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: activeTheme.primary }} />
                     <span className="font-outfit text-[8px] font-black uppercase tracking-widest" style={{ color: activeTheme.primary }}>
                         Ketuk Infinity stonenya untuk mengubah tema
@@ -878,7 +878,7 @@ function MethodologyGrid({ theme }: { theme: typeof themeColors[0] }) {
                 {methodology.map((item, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "0px" }}
                         transition={{ duration: 0.8, delay: i * 0.13, ease: [0.22, 1, 0.36, 1] }}
-                        className="methodology-card-morph group relative overflow-hidden rounded-3xl bg-[var(--foreground)]/5 backdrop-blur-sm border p-7 md:p-10 hover:bg-[var(--foreground)]/10 hover:shadow-xl transition-all duration-500"
+                        className="methodology-card-morph group relative overflow-hidden rounded-3xl bg-[var(--foreground)]/10 md:bg-[var(--foreground)]/5 md:backdrop-blur-sm border p-7 md:p-10 hover:bg-[var(--foreground)]/15 md:hover:bg-[var(--foreground)]/10 hover:shadow-xl transition-all duration-500"
                         style={{ borderColor: `${theme.primary}20` }}
                         onMouseEnter={(e: React.MouseEvent<HTMLElement>) => (e.currentTarget.style.borderColor = `${theme.primary}50`)}
                         onMouseLeave={(e: React.MouseEvent<HTMLElement>) => (e.currentTarget.style.borderColor = `${theme.primary}20`)}>

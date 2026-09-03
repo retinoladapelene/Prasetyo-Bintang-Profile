@@ -33,9 +33,9 @@ export const metadata: Metadata = {
   title: "Prasetyo Bintang - Portfolio",
   description: "Portfolio of Prasetyo Bintang, Developer & Data Analyst",
   icons: {
-    icon: "/Logo%20Prasetyo.svg",
-    shortcut: "/Logo%20Prasetyo.svg",
-    apple: "/Logo%20Prasetyo.svg",
+    icon: "/images/ui/Logo%20Prasetyo.svg",
+    shortcut: "/images/ui/Logo%20Prasetyo.svg",
+    apple: "/images/ui/Logo%20Prasetyo.svg",
   },
 };
 

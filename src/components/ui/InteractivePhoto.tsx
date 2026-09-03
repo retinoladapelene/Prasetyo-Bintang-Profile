@@ -261,7 +261,7 @@ export function InteractivePhoto({ settings }: { settings: any }) {
 
       {/* 3D Parallax Tilt & Depth Container (Opsi B: Fixed Aspect Ratio khusus Mobile) */}
       <motion.div
-        className={`pointer-events-none select-none overflow-hidden ${isMobile
+        className={`pointer-events-none select-none overflow-hidden theme-text-mask-light ${isMobile
           ? "absolute bottom-0 inset-x-0 w-full aspect-[1/1.38]"
           : "absolute inset-0 w-full h-full"
           }`}

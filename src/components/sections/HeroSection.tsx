@@ -42,21 +42,21 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
         style={{ opacity: 0.001, willChange: "opacity, visibility", transform: "translateZ(0)" }}
       >
         <div
-          className="flex whitespace-nowrap animate-marquee-left"
+          className="flex whitespace-nowrap animate-marquee-left w-max"
           style={{ willChange: "transform", transform: "translateZ(0)" }}
         >
           {[1, 2, 3, 4].map((i) => (
-            <h2 key={`mq-1-${i}`} className="font-syne text-[10vw] font-black tracking-tighter px-8 leading-[0.8]" style={{ color: 'var(--theme-primary)' }}>
+            <h2 key={`mq-1-${i}`} className="font-syne text-[10vw] font-black tracking-tighter px-8 leading-[1.1] py-4" style={{ color: 'var(--theme-primary)' }}>
               WEB DEVELOPMENT • DATA ANALYSIS • UI/UX DESIGN • 
             </h2>
           ))}
         </div>
         <div
-          className="flex whitespace-nowrap animate-marquee-right"
+          className="flex whitespace-nowrap animate-marquee-right w-max"
           style={{ willChange: "transform", transform: "translateZ(0)" }}
         >
           {[1, 2, 3, 4].map((i) => (
-            <h2 key={`mq-2-${i}`} className="font-syne text-[10vw] font-black tracking-tighter px-8 leading-[0.8]" style={{ color: 'var(--theme-primary)' }}>
+            <h2 key={`mq-2-${i}`} className="font-syne text-[10vw] font-black tracking-tighter px-8 leading-[1.1] py-4" style={{ color: 'var(--theme-primary)' }}>
               TRANSFORMING DATA INTO INSIGHTS • BUILDING SCALABLE APPS • 
             </h2>
           ))}

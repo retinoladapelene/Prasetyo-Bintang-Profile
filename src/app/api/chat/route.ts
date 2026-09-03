@@ -8,7 +8,7 @@ const WINDOW_MS = 24 * 60 * 60 * 1000; // 24 jam (dalam milidetik)
 
 export async function POST(req: Request) {
   try {
-    const { message, history = [], userName } = await req.json();
+    const { message, history = [], userName, useVoice, language = 'id' } = await req.json();
 
     if (!message) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     // Secret keyword untuk testing fitur ngorok tanpa menghabiskan limit
     if (message.toLowerCase().includes('coba suara ngorok') || message.toLowerCase().includes('test ngorok')) {
       return NextResponse.json({ 
-        reply: '*Zzzzz... (Terdengar suara ngorok)*',
+        reply: language === 'en' ? '*Zzzzz... (Snoring sound)*' : '*Zzzzz... (Terdengar suara ngorok)*',
         audioUrl: '/snoring.mp3'
       });
     }
@@ -42,12 +42,12 @@ export async function POST(req: Request) {
           
           if (overLimitCount === 1) {
             // Pelanggaran pertama (ke-16)
-            return NextResponse.json({ reply: 'udahan dulu yaa ngobrolnya gua mau tidur' });
+            return NextResponse.json({ reply: language === 'en' ? "Bro, my brain is fried today. Let's talk again tomorrow, okay?" : 'Bro, jatah ngobrol kita hari ini udah abis nih. Lanjut besok lagi ya!' });
           } else {
             // Pelanggaran kedua dan seterusnya (ke-17, 18, dst)
             // Mengirim audioUrl agar frontend memutar file lokal alih-alih menggunakan TTS
             return NextResponse.json({ 
-              reply: '*Zzzzz... (Terdengar suara ngorok)*',
+              reply: language === 'en' ? '*Zzzzz... (Snoring sound)*' : '*Zzzzz... (Terdengar suara ngorok)*',
               audioUrl: '/snoring.mp3'
             });
           }
@@ -64,7 +64,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const systemPrompt = await getSystemPrompt(userName);
+    let systemPrompt = await getSystemPrompt(userName);
+    
+    // ATURAN BAHASA BERDASARKAN PILIHAN USER
+    if (language === 'en') {
+      systemPrompt += "\n\nCRITICAL INSTRUCTION: You MUST respond ENTIRELY in English. Do not use Indonesian. Keep your personality, but speak English.";
+    } else {
+      systemPrompt += "\n\nCRITICAL INSTRUCTION: You MUST respond ENTIRELY in Indonesian (Bahasa Gaul Jakarta). Do not use English.";
+    }
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -79,7 +86,7 @@ export async function POST(req: Request) {
           ...history,
           { role: 'user', content: message }
         ],
-        temperature: 0.7,
+        temperature: 0.3,
         max_tokens: 1536,
       }),
     });
@@ -87,7 +94,7 @@ export async function POST(req: Request) {
     if (!response.ok) {
       if (response.status === 429) {
         // Jika kuota Groq API habis atau limit tercapai, kembalikan pesan santai ini sebagai balasan normal
-        return NextResponse.json({ reply: 'nnti lagi ya ngobrolnya gua mau tidur' });
+        return NextResponse.json({ reply: language === 'en' ? "Whoa hold up bro, you're typing too fast! Give me a minute to breathe, try again in a bit." : 'Waduh bentar bro, lu ngetiknya kecepetan! Kasih gw napas semenit, entar coba lagi ya.' });
       }
       
       const errorData = await response.json();
@@ -101,7 +108,7 @@ export async function POST(req: Request) {
       console.warn("Groq API mengembalikan respon kosong. Raw data:", JSON.stringify(data));
     }
     
-    const reply = content || 'Duh, otak gua nge-blank bentar. Coba tanya lagi dah.';
+    const reply = content || (language === 'en' ? "Ah, my brain just went blank. Could you ask again?" : 'Duh, otak gua nge-blank bentar. Coba tanya lagi dah.');
 
     return NextResponse.json({ reply });
   } catch (error: any) {

@@ -29,10 +29,11 @@ const PortalCanvas = () => {
     
     const controller = new VerticalPortalController(scene);
     
-    const clock = new THREE.Clock();
+    const clock = new THREE.Timer();
     let rid = 0;
     const animate = () => {
       rid = requestAnimationFrame(animate);
+      clock.update();
       controller.update(clock.getDelta(), portalState.progress);
       renderer.render(scene, camera);
     };

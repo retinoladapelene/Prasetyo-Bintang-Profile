@@ -52,13 +52,14 @@ export const LoadingScreen = ({ onComplete }: { onComplete: () => void }) => {
         }
       };
 
-      // Import THREE to hook into its DefaultLoadingManager
       import("three").then((THREE) => {
         if (!isMounted) return;
         
+        const originalOnLoad = THREE.DefaultLoadingManager.onLoad;
         THREE.DefaultLoadingManager.onLoad = () => {
           threejsLoaded = true;
           checkCompletion();
+          if (originalOnLoad) originalOnLoad();
         };
 
         // Fallback timer: force finish after 8 seconds in case no 3D models are loaded or network fails
@@ -104,8 +105,8 @@ export const LoadingScreen = ({ onComplete }: { onComplete: () => void }) => {
             <div
               className="w-full h-full relative overflow-hidden"
               style={{
-                maskImage: "url('/Logo%20Prasetyo.svg')",
-                WebkitMaskImage: "url('/Logo%20Prasetyo.svg')",
+                maskImage: "url('/images/ui/Logo%20Prasetyo.svg')",
+                WebkitMaskImage: "url('/images/ui/Logo%20Prasetyo.svg')",
                 maskSize: "contain",
                 WebkitMaskSize: "contain",
                 maskPosition: "center",

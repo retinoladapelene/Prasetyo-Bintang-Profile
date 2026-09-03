@@ -475,7 +475,7 @@ export function ArchiveGallery() {
   const [isWallPanel, setIsWallPanel] = useState(false);
   useMotionValueEvent(cinematicProgress, "change", (val) => {
     setIsHudRingActive(val >= 0.15 && val <= 0.30);
-    const inWall = val >= 0.9460;
+    const inWall = val >= 0.940;
     setIsWallPanel((prev) => {
       if (prev !== inWall) {
         if (!inWall) setClampedWallIndex(-1);
@@ -704,7 +704,7 @@ export function ArchiveGallery() {
             const currentScrollY = (window as any).lenis?.scroll || window.scrollY;
             
             // Allow native scroll if user is below the gallery
-            if (currentProgress < 0.9460 || !st || currentScrollY > st.end + 50) return;
+            if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
 
             const step = e.deltaY > 0 ? 1 : -1;
             const currentIdx = wallIndexRef.current;
@@ -743,7 +743,7 @@ export function ArchiveGallery() {
             const st = ScrollTrigger.getById("galleryTrigger");
             const currentScrollY = (window as any).lenis?.scroll || window.scrollY;
             
-            if (currentProgress < 0.9460 || !st || currentScrollY > st.end + 50) return;
+            if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
             
             touchStartY = e.touches[0].clientY;
             touchHandled = false;
@@ -754,7 +754,7 @@ export function ArchiveGallery() {
             const st = ScrollTrigger.getById("galleryTrigger");
             const currentScrollY = (window as any).lenis?.scroll || window.scrollY;
             
-            if (currentProgress < 0.9460 || !st || currentScrollY > st.end + 50) return;
+            if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
 
             const deltaY = touchStartY - e.touches[0].clientY;
             const step = deltaY > 0 ? 1 : -1;
@@ -911,7 +911,7 @@ export function ArchiveGallery() {
             </div>
 
             {/* Static UI for Active Project Description (Kiri Bawah - CAROUSEL PHASE) */}
-            <div className="absolute bottom-6 left-4 right-4 md:bottom-16 md:left-12 md:right-auto pointer-events-auto flex flex-col items-start w-auto md:w-[500px] sm:max-w-sm scale-95 sm:scale-100 origin-bottom-left z-10 p-4 md:p-0 rounded-xl md:rounded-none bg-black/70 md:bg-transparent border border-white/10 md:border-none shadow-2xl md:shadow-none">
+            <div className="absolute bottom-6 left-4 right-4 md:bottom-16 md:left-12 md:right-auto pointer-events-auto flex flex-col items-start w-auto md:w-[500px] sm:max-w-sm scale-95 sm:scale-100 origin-bottom-left z-10 p-0 md:p-0 rounded-none bg-transparent border-none shadow-none">
               <AnimatePresence mode="popLayout">
                 <motion.div
                   key={activeItem.id}
@@ -927,7 +927,7 @@ export function ArchiveGallery() {
                       {activeItem.id}
                     </span>
                     <div className="h-[1px] w-8 bg-white/40 drop-shadow-md" />
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-sm bg-black/40 backdrop-blur-sm">
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-white/80 border border-white/20 px-2 py-1 rounded-sm bg-black/80 md:bg-black/40 md:backdrop-blur-sm">
                       {activeItem.year}
                     </span>
                   </div>

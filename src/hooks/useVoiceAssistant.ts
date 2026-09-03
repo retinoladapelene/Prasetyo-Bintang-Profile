@@ -10,6 +10,7 @@ export function useVoiceAssistant() {
   const [error, setError] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<{role: string, content: string}[]>([]);
   const [userName, setUserName] = useState<string | null>(null);
+  const [language, setLanguage] = useState<'id' | 'en'>('id');
 
   // Load memori dari localStorage saat pertama kali dimuat
   useEffect(() => {
@@ -57,7 +58,7 @@ export function useVoiceAssistant() {
       const chatRes = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history: chatHistory, userName }),
+        body: JSON.stringify({ message: text, history: chatHistory, userName, useVoice, language }),
       });
 
       if (!chatRes.ok) {
@@ -105,13 +106,14 @@ export function useVoiceAssistant() {
 
       // 2. Gunakan Kyutai Pocket TTS (Voice Cloning Lokal)
       try {
-        const ttsRes = await fetch("https://bumpy-toes-double.loca.lt/generate", {
+        const ttsUrl = process.env.NEXT_PUBLIC_TTS_API_URL || "http://127.0.0.1:8000";
+        const ttsRes = await fetch(`${ttsUrl}/generate`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Bypass-Tunnel-Reminder": "true", // Otomatis melewati halaman peringatan keamanan localtunnel
           },
-          body: JSON.stringify({ text: reply }),
+          body: JSON.stringify({ text: reply, language }),
         });
 
         if (ttsRes.ok) {
@@ -153,7 +155,9 @@ export function useVoiceAssistant() {
     } finally {
       setIsProcessing(false);
     }
-  }, [chatHistory]);
+  }, [chatHistory, language, userName]);
+
+  const silenceTimerRef = useRef<any>(null);
 
   useEffect(() => {
     // Inisialisasi Web Speech API (Speech to Text)
@@ -161,25 +165,60 @@ export function useVoiceAssistant() {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
         recognitionRef.current = new SpeechRecognition();
-        recognitionRef.current.continuous = false;
-        recognitionRef.current.interimResults = false;
-        recognitionRef.current.lang = 'id-ID';
+        recognitionRef.current.continuous = true; // Biarkan terus mendengarkan sampai kita hentikan
+        recognitionRef.current.interimResults = true; // Dapatkan hasil sementara agar UI responsif
+        recognitionRef.current.lang = language === 'en' ? 'en-US' : 'id-ID';
 
-        recognitionRef.current.onresult = async (event: any) => {
-          const currentTranscript = event.results[0][0].transcript;
-          setTranscript(currentTranscript);
-          setIsListening(false);
-          await handleInput(currentTranscript, true); // Voice mode
+        recognitionRef.current.onresult = (event: any) => {
+          let finalTranscript = '';
+          let interimTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript + ' ';
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
+          }
+
+          // Gabungkan semua hasil final yang sudah didengar dari awal event ini
+          let fullFinal = '';
+          for (let i = 0; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+              fullFinal += event.results[i][0].transcript + ' ';
+            }
+          }
+
+          const currentText = fullFinal + interimTranscript;
+          setTranscript(currentText.trim());
+
+          // Reset timer setiap kali ada input suara baru
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+          }
+
+          // Set timer 2.5 detik. Jika tidak ada suara baru, anggap selesai bicara.
+          silenceTimerRef.current = setTimeout(async () => {
+            recognitionRef.current.stop();
+            setIsListening(false);
+            
+            const textToSend = fullFinal.trim() || interimTranscript.trim();
+            if (textToSend) {
+              await handleInput(textToSend, true);
+            }
+          }, 2500);
         };
 
         recognitionRef.current.onerror = (event: any) => {
           console.error('Speech recognition error', event.error);
           setError(`Gagal merekam suara: ${event.error}`);
           setIsListening(false);
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         };
 
         recognitionRef.current.onend = () => {
           setIsListening(false);
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         };
       } else {
         setTimeout(() => setError('Browser Anda tidak mendukung Web Speech API. Gunakan Chrome atau Safari.'), 0);
@@ -187,14 +226,11 @@ export function useVoiceAssistant() {
     }
 
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      if (recognitionRef.current) recognitionRef.current.stop();
+      if (audioRef.current) audioRef.current.pause();
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     };
-  }, [handleInput]);
+  }, [handleInput, language]);
 
   const sendTextMessage = useCallback(async (text: string) => {
     setTranscript(text);
@@ -222,6 +258,7 @@ export function useVoiceAssistant() {
 
     setIsListening(true);
     try {
+      recognitionRef.current.lang = language === 'en' ? 'en-US' : 'id-ID';
       recognitionRef.current.start();
     } catch (e: any) {
       console.error(e);
@@ -242,5 +279,7 @@ export function useVoiceAssistant() {
     sendTextMessage,
     chatHistory,
     userName,
+    language,
+    setLanguage,
   };
 }

@@ -485,6 +485,13 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
         if (state.renderer) {
           state.nanoController = new NanoAssemblyController(avatarGroup, state.renderer);
           state.portalController = new PortalTransitionController(avatarGroup);
+          
+          // FORCE SHADER COMPILATION NOW that the avatar is in the scene.
+          // This absolutely guarantees that the heavy GPU work is done before the loading screen finishes.
+          if (state.scene && state.camera) {
+            state.renderer.compile(state.scene, state.camera);
+            state.renderer.render(state.scene, state.camera); // Force upload to GPU
+          }
         }
       }
     );
@@ -519,8 +526,8 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
     // 4. Create Carousel Group
     const carouselGroup = new THREE.Group();
     if (isMobile) {
-      carouselGroup.scale.set(0.65, 0.65, 0.65); // Perkecil drastis untuk mobile
-      carouselGroup.position.y = 1.5; // Naikkan sedikit agar seimbang posisinya
+      carouselGroup.scale.set(0.95, 0.95, 0.95); // Diperbesar drastis untuk mobile
+      carouselGroup.position.y = 1.0; // Sesuaikan posisi y agar tidak terlalu ke atas
     }
     scene.add(carouselGroup);
     state.carouselGroup = carouselGroup;
@@ -1128,32 +1135,34 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
       const centerY = textCanvas.height / 2;
       
       // Responsive sizing
-      const titleFontSize = isMobile ? 120 : 200;
-      const titleLetterSpacing = isMobile ? '20px' : '60px';
-      const titleYOffset = isMobile ? -30 : -60;
+      const titleFontSize = isMobile ? 80 : 160;
+      const titleLetterSpacing = isMobile ? '15px' : '40px';
+      const titleYOffset = isMobile ? -30 : -50;
       
-      const sepWidth = isMobile ? 50 : 80;
-      const sepYOffset = isMobile ? 35 : 50;
+      const sepWidth = isMobile ? 80 : 150;
+      const sepYOffset = isMobile ? 30 : 50;
       
-      const subFontSize = isMobile ? 24 : 45;
-      const subLetterSpacing = isMobile ? '15px' : '30px';
-      const subYOffset = isMobile ? 90 : 140;
+      const subFontSize = isMobile ? 18 : 28;
+      const subLetterSpacing = isMobile ? '8px' : '20px';
+      const subYOffset = isMobile ? 80 : 120;
       
-      // Modern Letter Spacing (Support modern browsers)
+      // Modern Letter Spacing
       if ('letterSpacing' in textCtx) {
         (textCtx as any).letterSpacing = titleLetterSpacing;
       }
       
       // Main Title
-      textCtx.font = `300 ${titleFontSize}px "Inter", "Outfit", sans-serif`;
-      textCtx.fillStyle = 'rgba(255, 255, 255, 0.9)'; // Slightly transparent for elegance
-      // Very subtle elegant glow
-      textCtx.shadowColor = 'rgba(255, 255, 255, 0.2)';
-      textCtx.shadowBlur = isMobile ? 8 : 15;
+      textCtx.font = `700 ${titleFontSize}px "Inter", "Outfit", sans-serif`;
+      textCtx.fillStyle = '#ffffff';
+      
+      // Elegant glow
+      textCtx.shadowColor = 'rgba(255, 255, 255, 0.4)';
+      textCtx.shadowBlur = isMobile ? 10 : 25;
       textCtx.shadowOffsetX = 0;
       textCtx.shadowOffsetY = 0;
       
-      textCtx.fillText('T H E   W O R K F L O W', centerX, centerY + titleYOffset);
+      // Remove hardcoded spaces between letters, rely on letterSpacing
+      textCtx.fillText('WORKFLOW', centerX, centerY + titleYOffset);
 
       // Reset shadow for subsequent elements
       textCtx.shadowBlur = 0;
@@ -1162,17 +1171,17 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
       textCtx.beginPath();
       textCtx.moveTo(centerX - sepWidth, centerY + sepYOffset);
       textCtx.lineTo(centerX + sepWidth, centerY + sepYOffset);
-      textCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-      textCtx.lineWidth = isMobile ? 1 : 2;
+      textCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      textCtx.lineWidth = isMobile ? 2 : 3;
       textCtx.stroke();
       
       // Subtitle
       if ('letterSpacing' in textCtx) {
         (textCtx as any).letterSpacing = subLetterSpacing;
       }
-      textCtx.font = `400 ${subFontSize}px "Inter", "Outfit", sans-serif`;
-      textCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-      textCtx.fillText('C R E A T I V E   P R O C E S S', centerX, centerY + subYOffset);
+      textCtx.font = `300 ${subFontSize}px "Inter", "Outfit", sans-serif`;
+      textCtx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      textCtx.fillText('CREATIVE PROCESS', centerX, centerY + subYOffset);
     }
     
     const textTex = new THREE.CanvasTexture(textCanvas);
@@ -1438,13 +1447,22 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
     observer.observe(container);
 
     // 7. Resize Handler
+    let resizeTimeout: NodeJS.Timeout;
     const onResize = () => {
-      if (!container || state.disposed) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (!container || state.disposed) return;
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        const currentIsMobile = window.innerWidth < 768;
+        
+        // Optimasi: Update pixel ratio dinamis pada saat resize
+        renderer.setPixelRatio(currentIsMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.5));
+        
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      }, 150); // Debounce delay 150ms
     };
     window.addEventListener("resize", onResize, { passive: true });
 
@@ -1708,21 +1726,21 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
       let targetIndex = 0;
 
       if (smoothedScroll >= 0.85) {
+        const START_T = GALLERY_CONFIG.START_T;
+        const T_LEFT = isMobile ? 0.56 : GALLERY_CONFIG.T_LEFT;
+        const SPACING = GALLERY_CONFIG.SPACING;
+        const TRAVEL = START_T - T_LEFT + 4 * SPACING;
+
         if (smoothedScroll >= 0.94) {
           const WALL_START = 0.94;
           const WALL_END = 0.975;
           let wp = Math.max((smoothedScroll - WALL_START) / (WALL_END - WALL_START), 0);
 
-          const START_T = GALLERY_CONFIG.START_T;
-          const T_LEFT = isMobile ? 0.56 : GALLERY_CONFIG.T_LEFT;
-          const SPACING = GALLERY_CONFIG.SPACING;
-          const TRAVEL = START_T - T_LEFT + 4 * SPACING;
-
           rawIndex = (wp * TRAVEL - (START_T - T_LEFT)) / SPACING;
           targetIndex = Math.round(rawIndex);
         } else {
-          targetIndex = -1;
-          rawIndex = -1;
+          rawIndex = -(START_T - T_LEFT) / SPACING;
+          targetIndex = Math.round(rawIndex);
         }
       } else {
         const currentStep = smoothedScroll * totalRotationSteps;
@@ -2109,6 +2127,7 @@ export function CylinderGalleryScene({ items, wallItems, smoothProgress, classNa
     return () => {
       state.disposed = true;
       cancelAnimationFrame(state.animationId);
+      clearTimeout(resizeTimeout);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("click", onClick);

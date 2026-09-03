@@ -38,7 +38,7 @@ const PROFILES: Record<QualityTier, QualityProfile> = {
   },
   low: {
     tier: "low",
-    particleCount: 1200,
+    particleCount: 500,
     bloomEnabled: false,
     bloomStrength: 0,
     msaa: false,
@@ -81,8 +81,7 @@ export function detectQuality(renderer: THREE.WebGLRenderer): QualityProfile {
     navigator.userAgent
   );
   if (isMobile) {
-    if (tier === "ultra") tier = "high";
-    if (tier === "high") tier = "medium";
+    tier = "low";
   }
 
   return PROFILES[tier];

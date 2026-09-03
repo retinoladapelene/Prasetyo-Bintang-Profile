@@ -86,7 +86,7 @@ html, body, * {
 }
 
 .animate-marquee-left {
-  animation: marquee-left 40s linear infinite;
+  animation: marquee-left 600s linear infinite;
   will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
@@ -94,7 +94,7 @@ html, body, * {
 }
 
 .animate-marquee-right {
-  animation: marquee-right 50s linear infinite;
+  animation: marquee-right 720s linear infinite;
   will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
