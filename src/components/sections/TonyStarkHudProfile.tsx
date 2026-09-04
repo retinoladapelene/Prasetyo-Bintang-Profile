@@ -394,9 +394,9 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
     }
   );
 
-  const opacity = useTransform(combinedProgress, [0.174, 0.178, 0.288, 0.293], [0, 1, 1, 0]);
-  const scale = useTransform(combinedProgress, [0.174, 0.182, 0.284, 0.293], [0.98, 1, 1, 1.02]);
-  const visibility = useTransform(combinedProgress, (val) => (val < 0.172 || val > 0.295 ? "hidden" : "visible"));
+  const opacity = useTransform(combinedProgress, [0.174, 0.178, 0.368, 0.373], [0, 1, 1, 0]);
+  const scale = useTransform(combinedProgress, [0.174, 0.182, 0.364, 0.373], [0.98, 1, 1, 1.02]);
+  const visibility = useTransform(combinedProgress, (val) => (val < 0.172 || val > 0.375 ? "hidden" : "visible"));
 
   const [activeCategory, setActiveCategory] = useState<ActiveCategory>(null);
   const [clockTime, setClockTime] = useState("23:46:21");
@@ -525,7 +525,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
           <AnimatedHudElement
             smoothProgress={combinedProgress}
             enterRange={[0.175, 0.190]}
-            exitRange={[0.278, 0.292]}
+            exitRange={[0.458, 0.472]}
             fromY={-35}
             className="absolute right-4 top-4 z-30 sm:right-6 sm:top-6 lg:right-28 lg:top-8 pointer-events-none"
           >
@@ -559,7 +559,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
               <AnimatedTypewriterLine
                 smoothProgress={combinedProgress}
                 enterRange={[0.178, 0.190]}
-                exitRange={[0.278, 0.290]}
+                exitRange={[0.458, 0.470]}
                 showCursor={true}
               >
                 <h1 className="text-sm font-black uppercase tracking-[0.12em] text-[var(--foreground)] drop-shadow-[0_0_14px_var(--foreground)] sm:text-base lg:text-lg xl:text-xl pointer-events-auto w-max">
@@ -569,7 +569,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
               <AnimatedTypewriterLine
                 smoothProgress={combinedProgress}
                 enterRange={[0.183, 0.195]}
-                exitRange={[0.273, 0.285]}
+                exitRange={[0.453, 0.465]}
                 showCursor={true}
               >
                 <div className="text-xs font-extrabold uppercase tracking-[0.16em] sm:text-sm lg:text-base xl:text-lg pointer-events-auto w-max">
@@ -580,7 +580,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
               <AnimatedTypewriterLine
                 smoothProgress={combinedProgress}
                 enterRange={[0.188, 0.198]}
-                exitRange={[0.268, 0.280]}
+                exitRange={[0.448, 0.460]}
                 showCursor={true}
               >
                 <div className="pt-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--foreground)]">
@@ -590,7 +590,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
               <AnimatedTypewriterLine
                 smoothProgress={combinedProgress}
                 enterRange={[0.192, 0.201]}
-                exitRange={[0.264, 0.276]}
+                exitRange={[0.444, 0.456]}
                 showCursor={false}
               >
                 <div className="text-[9px] uppercase tracking-[0.18em] text-[var(--foreground)]/75">
@@ -600,7 +600,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
               <AnimatedHudElement
                 smoothProgress={combinedProgress}
                 enterRange={[0.195, 0.203]}
-                exitRange={[0.262, 0.272]}
+                exitRange={[0.442, 0.452]}
                 fromScale={0}
               >
                 <div className="mt-2.5 h-[2px] w-full bg-gradient-to-r from-[var(--theme-primary)] via-[rgb(var(--theme-primary-rgb)/0.5)] to-transparent shadow-[0_0_10px_var(--theme-primary)] origin-left" />
@@ -623,7 +623,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   key={category.id}
                   smoothProgress={combinedProgress}
                   enterRange={[0.186 + idx * 0.005, 0.198 + idx * 0.005]}
-                  exitRange={[0.275 - idx * 0.005, 0.287 - idx * 0.005]}
+                  exitRange={[0.455 - idx * 0.005, 0.467 - idx * 0.005]}
                   fromX={-70}
                 >
                   <Panel3D mouseX={mx} mouseY={my} depth={nodeDepth}>
@@ -696,7 +696,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                 <AnimatedHudElement
                   smoothProgress={combinedProgress}
                   enterRange={[0.188, 0.202]}
-                  exitRange={[0.270, 0.284]}
+                  exitRange={[0.450, 0.464]}
                   fromX={80}
                   fromRotateY={-25}
                   fromScale={0.9}
@@ -739,7 +739,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   <AnimatedHudElement
                     smoothProgress={combinedProgress}
                     enterRange={[0.188, 0.200]}
-                    exitRange={[0.275, 0.287]}
+                    exitRange={[0.455, 0.467]}
                     fromX={80}
                     fromRotateY={-25}
                   >
@@ -755,7 +755,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                         key={cat.category}
                         smoothProgress={combinedProgress}
                         enterRange={[0.192 + i * 0.005, 0.204 + i * 0.005]}
-                        exitRange={[0.272 - i * 0.005, 0.284 - i * 0.005]}
+                        exitRange={[0.452 - i * 0.005, 0.464 - i * 0.005]}
                         fromX={80}
                         fromRotateY={-25}
                         fromScale={0.9}
@@ -786,7 +786,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                 <AnimatedHudElement
                   smoothProgress={combinedProgress}
                   enterRange={[0.188, 0.202]}
-                  exitRange={[0.270, 0.284]}
+                  exitRange={[0.450, 0.464]}
                   fromX={80}
                   fromRotateY={-25}
                   fromScale={0.9}
@@ -826,7 +826,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   <AnimatedHudElement
                     smoothProgress={combinedProgress}
                     enterRange={[0.188, 0.200]}
-                    exitRange={[0.275, 0.287]}
+                    exitRange={[0.455, 0.467]}
                     fromX={80}
                     fromRotateY={-25}
                   >
@@ -842,7 +842,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                         key={p.id}
                         smoothProgress={combinedProgress}
                         enterRange={[0.192 + i * 0.005, 0.204 + i * 0.005]}
-                        exitRange={[0.272 - i * 0.005, 0.284 - i * 0.005]}
+                        exitRange={[0.452 - i * 0.005, 0.464 - i * 0.005]}
                         fromX={80}
                         fromRotateY={-25}
                         fromScale={0.9}
@@ -883,7 +883,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   <AnimatedHudElement
                     smoothProgress={combinedProgress}
                     enterRange={[0.188, 0.200]}
-                    exitRange={[0.275, 0.287]}
+                    exitRange={[0.455, 0.467]}
                     fromX={80}
                     fromRotateY={-25}
                     fromScale={0.9}
@@ -914,7 +914,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   <AnimatedHudElement
                     smoothProgress={combinedProgress}
                     enterRange={[0.193, 0.205]}
-                    exitRange={[0.270, 0.282]}
+                    exitRange={[0.450, 0.462]}
                     fromX={80}
                     fromRotateY={-25}
                     fromScale={0.9}
@@ -942,7 +942,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   <AnimatedHudElement
                     smoothProgress={combinedProgress}
                     enterRange={[0.198, 0.210]}
-                    exitRange={[0.265, 0.277]}
+                    exitRange={[0.445, 0.457]}
                     fromX={80}
                     fromRotateY={-25}
                     fromScale={0.9}
@@ -973,7 +973,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                   <AnimatedHudElement
                     smoothProgress={combinedProgress}
                     enterRange={[0.203, 0.215]}
-                    exitRange={[0.260, 0.272]}
+                    exitRange={[0.440, 0.452]}
                     fromX={80}
                     fromRotateY={-25}
                     fromScale={0.9}
@@ -1011,7 +1011,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
         <AnimatedHudElement
           smoothProgress={combinedProgress}
           enterRange={[0.195, 0.210]}
-          exitRange={[0.260, 0.275]}
+          exitRange={[0.440, 0.455]}
           fromY={35}
           className="absolute bottom-4 left-4 right-4 sm:bottom-5 sm:left-8 sm:right-8 z-30 pointer-events-none"
         >

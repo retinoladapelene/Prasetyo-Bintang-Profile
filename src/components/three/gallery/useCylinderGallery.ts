@@ -380,7 +380,7 @@ export function useCylinderGallery({ items, wallItems, smoothProgress, className
     // 4. Create Carousel Group
     const carouselGroup = new THREE.Group();
     if (isMobile) {
-      carouselGroup.scale.set(0.95, 0.95, 0.95); // Diperbesar drastis untuk mobile
+      carouselGroup.scale.set(0.7, 0.7, 0.7); // Diperkecil agar tidak terpotong di mobile
       carouselGroup.position.y = 1.0; // Sesuaikan posisi y agar tidak terlalu ke atas
     }
     scene.add(carouselGroup);
@@ -527,60 +527,44 @@ export function useCylinderGallery({ items, wallItems, smoothProgress, className
           float mask = 1.0;
           float cellHash = 0.5;
 
-          #ifndef IS_MOBILE
+          // Gunakan Bento Grid logic yang sama untuk Mobile dan Desktop
+          // OPTIMASI: Hitung scale dan hash terlebih dahulu, baru panggil roundedBox 1 kali di akhir
+          // Ini mengurangi beban GPU secara eksponensial pada mobile
+          vec2 finalScale = vec2(32.0, 16.0);
+          
           vec2 scale0 = vec2(8.0, 4.0);
-          vec2 uv0 = uv * scale0;
-          vec2 g0 = floor(uv0);
-          float box0 = roundedBox(uv0, scale0, rCorner);
-          
-          vec2 scale1 = vec2(16.0, 4.0);
-          vec2 uv1 = uv * scale1;
-          vec2 g1 = floor(uv1);
-          float box1 = roundedBox(uv1, scale1, rCorner);
-          
-          vec2 scale2 = vec2(16.0, 8.0);
-          vec2 uv2 = uv * scale2;
-          vec2 g2 = floor(uv2);
-          float box2 = roundedBox(uv2, scale2, rCorner);
-          
-          vec2 scale3 = vec2(32.0, 8.0);
-          vec2 uv3 = uv * scale3;
-          vec2 g3 = floor(uv3);
-          float box3 = roundedBox(uv3, scale3, rCorner);
-          
-          vec2 scale4 = vec2(32.0, 16.0);
-          vec2 uv4 = uv * scale4;
-          vec2 g4 = floor(uv4);
-          float box4 = roundedBox(uv4, scale4, rCorner);
-          
-          float h0 = hash(g0);
-          float h1 = hash(g1);
-          float h2 = hash(g2);
-          float h3 = hash(g3);
-          float h4 = hash(g4);
-          
-          mask = 0.0;
-          cellHash = 0.0;
+          float h0 = hash(floor(uv * scale0));
           
           if (h0 > 0.8) {
-            mask = box0; cellHash = h0;
-          } else if (h1 > 0.65) {
-            mask = box1; cellHash = h1;
-          } else if (h2 > 0.5) {
-            mask = box2; cellHash = h2;
-          } else if (h3 > 0.3) {
-            mask = box3; cellHash = h3;
+            finalScale = scale0;
+            cellHash = h0;
           } else {
-            mask = box4; cellHash = h4;
+            vec2 scale1 = vec2(16.0, 4.0);
+            float h1 = hash(floor(uv * scale1));
+            if (h1 > 0.65) {
+              finalScale = scale1;
+              cellHash = h1;
+            } else {
+              vec2 scale2 = vec2(16.0, 8.0);
+              float h2 = hash(floor(uv * scale2));
+              if (h2 > 0.5) {
+                finalScale = scale2;
+                cellHash = h2;
+              } else {
+                vec2 scale3 = vec2(32.0, 8.0);
+                float h3 = hash(floor(uv * scale3));
+                if (h3 > 0.3) {
+                  finalScale = scale3;
+                  cellHash = h3;
+                } else {
+                  finalScale = vec2(32.0, 16.0);
+                  cellHash = hash(floor(uv * finalScale));
+                }
+              }
+            }
           }
-          #else
-          // MOBILE OPTIMIZED BENTO MASK (Hanya 1 layer untuk hemat GPU, step bukan smoothstep berulang)
-          vec2 scaleM = vec2(16.0, 8.0);
-          vec2 uvM = uv * scaleM;
-          vec2 gM = floor(uvM);
-          mask = roundedBox(uvM, scaleM, rCorner);
-          cellHash = hash(gM);
-          #endif
+          
+          mask = roundedBox(uv * finalScale, finalScale, rCorner);
           
           // --- Surface Texture & Styling ---
           
@@ -1560,7 +1544,7 @@ export function useCylinderGallery({ items, wallItems, smoothProgress, className
       smoothedScroll = THREE.MathUtils.lerp(smoothedScroll, state.scrollProgress, 1 - Math.exp(-damping * dt));
 
       // Padding to allow the 3D star to be alone at start and end
-      const paddingStart = 5.0;
+      const paddingStart = 10.0;
       const paddingEnd = 4.0;
       const totalRotationSteps = (items.length - 1) + paddingStart + paddingEnd;
 
@@ -1580,7 +1564,7 @@ export function useCylinderGallery({ items, wallItems, smoothProgress, className
 
       if (smoothedScroll >= 0.85) {
         const START_T = GALLERY_CONFIG.START_T;
-        const T_LEFT = isMobile ? 0.56 : GALLERY_CONFIG.T_LEFT;
+        const T_LEFT = isMobile ? 0.575 : GALLERY_CONFIG.T_LEFT;
         const SPACING = GALLERY_CONFIG.SPACING;
         const TRAVEL = START_T - T_LEFT + 4 * SPACING;
         
@@ -1669,7 +1653,7 @@ export function useCylinderGallery({ items, wallItems, smoothProgress, className
       }
 
       // Stage 2: Carousel Panels
-      const panelGlobalFade = Math.min(Math.max((state.scrollProgress - 0.15) / 0.05, 0), 1);
+      const panelGlobalFade = Math.min(Math.max((state.scrollProgress - 0.45) / 0.04, 0), 1);
       const panelExitFade = 1 - Math.min(Math.max((smoothedScroll - 0.70) / 0.05, 0), 1);
       
       // Blackout transition (darkens background image, leaves grid visible)
@@ -1723,7 +1707,7 @@ export function useCylinderGallery({ items, wallItems, smoothProgress, className
         // Menggunakan konstanta dari konfigurasi di atas
         const START_T = GALLERY_CONFIG.START_T;
         const MIN_T = -3.50;    // Batas aman
-        const T_LEFT = isMobile ? 0.56 : GALLERY_CONFIG.T_LEFT;
+        const T_LEFT = isMobile ? 0.575 : GALLERY_CONFIG.T_LEFT;
         const TRAVEL = START_T - T_LEFT + 4 * GALLERY_CONFIG.SPACING;
         const SPACING = GALLERY_CONFIG.SPACING;
 

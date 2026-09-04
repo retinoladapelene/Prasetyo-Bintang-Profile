@@ -15,7 +15,7 @@ const WallPhaseItemText = ({ item, index, cinematicProgress }: { item: any, inde
   const [stops, setStops] = useState(() => {
     const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
     const START_T = 1.40;
-    const T_LEFT = isMobile ? 0.56 : 0.37;
+    const T_LEFT = isMobile ? 0.575 : 0.37;
     const SPACING = 1.15;
     const TRAVEL = START_T - T_LEFT + 4 * SPACING;
     const initStops = [];
@@ -30,7 +30,7 @@ const WallPhaseItemText = ({ item, index, cinematicProgress }: { item: any, inde
     const updateStops = () => {
       const isMobile = window.innerWidth < 768;
       const START_T = 1.40;
-      const T_LEFT = isMobile ? 0.56 : 0.37;
+      const T_LEFT = isMobile ? 0.575 : 0.37;
       const SPACING = 1.15;
       const TRAVEL = START_T - T_LEFT + 4 * SPACING;
       const newStops = [];
@@ -398,7 +398,7 @@ export function ArchiveGallery() {
     mass: 0.1,
     restDelta: 0.0001
   });
-  const PADDING_START = 5;
+  const PADDING_START = 10;
   const PADDING_END = 4;
   const totalSteps = (galleryItems.length - 1) + PADDING_START + PADDING_END;
 
@@ -457,11 +457,11 @@ export function ArchiveGallery() {
   const backgroundOpacity = useTransform(cinematicProgress, [0.15, 0.18, 0.985, 0.998], [0, 1, 1, 1]);
   const backgroundVisibility = useTransform(cinematicProgress, (val) => (val < 0.14 ? "hidden" : "visible"));
 
-  // Stage 2B: Project UI description text AND 3D Panels appear AFTER background monitors boot up! (0.25 to 0.32)
-  // This ensures they are 100% visible at the first snap point (0.354).
-  const panelsUiOpacity = useTransform(cinematicProgress, [0.25, 0.32, 0.70, 0.75], [0, 1, 1, 0]);
-  const panelsUiVisibility = useTransform(cinematicProgress, (val) => (val < 0.24 || val >= 0.76 ? "hidden" : "visible"));
-  const panelsUiTranslateY = useTransform(cinematicProgress, [0.25, 0.32, 0.70, 0.75], [25, 0, 0, -20]);
+  // Stage 2B: Project UI description text AND 3D Panels appear AFTER background monitors boot up! (0.45 to 0.49)
+  // This ensures they are 100% visible at the first snap point (0.50).
+  const panelsUiOpacity = useTransform(cinematicProgress, [0.45, 0.49, 0.75, 0.80], [0, 1, 1, 0]);
+  const panelsUiVisibility = useTransform(cinematicProgress, (val) => (val < 0.44 || val >= 0.81 ? "hidden" : "visible"));
+  const panelsUiTranslateY = useTransform(cinematicProgress, [0.45, 0.49, 0.75, 0.80], [25, 0, 0, -20]);
 
   // Stage 3: Keep the WebGL canvas alive.
   const sceneOpacity = useTransform(cinematicProgress, [0.985, 0.998], [1, 1]);
@@ -473,26 +473,15 @@ export function ArchiveGallery() {
   const wallUiVisibility = useTransform(cinematicProgress, (val) => (val < 0.87 || val > 0.986 ? "hidden" : "visible"));
   const wallUiTranslateX = useTransform(cinematicProgress, [0.88, 0.94], [50, 0]);
 
-  // HUD background ring opacity — visible during HUD phase only (fades out completely by 0.29)
-  const hudRingOpacity = useTransform(cinematicProgress, [0.18, 0.21, 0.26, 0.29], [0, 1, 1, 0]);
-  const hudRingVisibility = useTransform(cinematicProgress, (val) => (val < 0.16 || val > 0.295 ? "hidden" : "visible"));
+  // HUD background ring opacity — visible during HUD phase only (fades out completely by 0.48)
+  const hudRingOpacity = useTransform(cinematicProgress, [0.18, 0.21, 0.45, 0.48], [0, 1, 1, 0]);
+  const hudRingVisibility = useTransform(cinematicProgress, (val) => (val < 0.16 || val > 0.49 ? "hidden" : "visible"));
 
   // Stage 5: Blackout transition to SlingRingPortal
   const blackoutOpacity = useTransform(cinematicProgress, [0.993, 1], [0, 1]);
 
   const [isHudRingActive, setIsHudRingActive] = useState(false);
   const [isWallPanel, setIsWallPanel] = useState(false);
-  useMotionValueEvent(cinematicProgress, "change", (val) => {
-    setIsHudRingActive(val >= 0.15 && val <= 0.30);
-    const inWall = val >= 0.940;
-    setIsWallPanel((prev) => {
-      if (prev !== inWall) {
-        if (!inWall) setClampedWallIndex(-1);
-        return inWall;
-      }
-      return prev;
-    });
-  });
 
   const [clampedActiveIndex, setClampedActiveIndex] = useState(-1);
   const [clampedWallIndex, setClampedWallIndex] = useState(-1);
@@ -503,6 +492,36 @@ export function ArchiveGallery() {
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Ref-based tracking untuk wall index (menghindari stale closure di dalam scroll handler)
   const wallIndexRef = useRef(-1);
+  const doSnapRef = useRef<((idx: number, isWall?: boolean, immediate?: boolean) => void) | null>(null);
+  const touchStartYRef = useRef(0);
+  useMotionValueEvent(cinematicProgress, "change", (val) => {
+    setIsHudRingActive(val >= 0.15 && val <= 0.49);
+    
+    // ANTI-MOMENTUM SHIELD FOR DOCTOR STRANGE (Index 0)
+    // If the user scrolls down very hard through the WORKFLOW section, Lenis momentum might overshoot.
+    // As soon as we cross the threshold into the Wall Phase, we KILL the momentum 
+    // by forcing a snap to index 0, guaranteeing they land on Doctor Strange.
+    if (val > 0.950 && wallIndexRef.current === -1 && !isSnappingRef.current) {
+      wallIndexRef.current = 0;
+      setClampedWallIndex(0);
+      
+      const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+      const isOvershot = isMobile ? true : val >= 0.988;
+      if (doSnapRef.current) doSnapRef.current(0, true, isOvershot);
+    }
+    
+    const inWall = val >= 0.940;
+    setIsWallPanel((prev) => {
+      if (prev !== inWall) {
+        if (!inWall) {
+          setClampedWallIndex(-1);
+          wallIndexRef.current = -1;
+        }
+        return inWall;
+      }
+      return prev;
+    });
+  });
 
   useEffect(() => {
     // Perfect Snap & Discrete Scroll mechanism:
@@ -512,7 +531,7 @@ export function ArchiveGallery() {
       const getLenis = () => (window as any).lenis;
       const getSt = () => ScrollTrigger.getById("galleryTrigger");
       
-      const doSnap = (idx: number, isWall: boolean) => {
+      const doSnap = (idx: number, isWall: boolean = false, immediate: boolean = false) => {
         const lenis = getLenis();
         const st = getSt();
         if (!lenis || !st || isSnappingRef.current) return;
@@ -538,9 +557,10 @@ export function ArchiveGallery() {
             targetScrollY = st.start + (st.end - st.start) * 0.990; 
           } else {
             const START_T = GALLERY_CONFIG.START_T;
-            const T_LEFT = GALLERY_CONFIG.T_LEFT;
+            const isMobile = window.innerWidth < 768;
+            const T_LEFT = isMobile ? 0.575 : GALLERY_CONFIG.T_LEFT;
             const SPACING = GALLERY_CONFIG.SPACING;
-            const TRAVEL = GALLERY_TRAVEL;
+            const TRAVEL = START_T - T_LEFT + 4 * SPACING;
             
             const wp = (idx * SPACING + START_T - T_LEFT) / TRAVEL;
             // Wall Phase sekarang dipadatkan dari 0.94 ke 0.975
@@ -553,13 +573,21 @@ export function ArchiveGallery() {
         const currentScrollY = lenis.scroll;
         const distance = Math.abs(targetScrollY - currentScrollY);
         const isFar = distance > window.innerHeight * 1.5;
-        const snapDuration = isFar ? 1.2 : 0.5;
+        const snapDuration = immediate ? 0 : (isFar ? 1.2 : 0.5);
         
+        const targetProgress = (targetScrollY - st.start) / (st.end - st.start);
+        
+        if (immediate) {
+          // Framer Motion useSpring: Hentikan sisa momentum secara instan
+          cinematicProgress.jump(targetProgress);
+        }
+
         // Scroll ke panel terdekat
         // Gunakan force: true dan lock: true agar animasi tidak dibatalkan dan 
         // native scroll tidak melompat jauh (terlempar) saat user melakukan swipe keras.
         lenis.scrollTo(targetScrollY, { 
-          duration: snapDuration, 
+          duration: snapDuration,
+          immediate: immediate,
           easing: (t: number) => 1 - Math.pow(1 - t, 4), // easeOutQuart
           force: true,
           lock: true,
@@ -580,6 +608,7 @@ export function ArchiveGallery() {
           setSyncTick(t => t + 1);
         }, snapDuration * 1000 + 100);
       };
+      doSnapRef.current = doSnap;
 
       if (true) {
         if (!isWallPanel) {
@@ -642,7 +671,6 @@ export function ArchiveGallery() {
           };
 
           // Touch handling untuk mobile (swipe detection)
-          let touchStartY = 0;
           let touchHandled = false;
           
           const handleTouchStart = (e: TouchEvent) => {
@@ -651,7 +679,7 @@ export function ArchiveGallery() {
             if (!lenis || !st) return;
             // ALWAYS set touchStartY so that if a touch starts outside the gallery 
             // and moves inside, deltaY isn't calculated against 0.
-            touchStartY = e.touches[0].clientY;
+            touchStartYRef.current = e.touches[0].clientY;
             touchHandled = false;
             
             const currentProgress = cinematicProgress.get();
@@ -665,7 +693,7 @@ export function ArchiveGallery() {
             const currentProgress = cinematicProgress.get();
             if (currentProgress < 0.1 || currentProgress > 0.85) return;
             
-            const deltaY = touchStartY - e.touches[0].clientY;
+            const deltaY = touchStartYRef.current - e.touches[0].clientY;
             const step = deltaY > 0 ? 1 : -1;
             
             const totalSteps = (galleryItems.length - 1) + PADDING_START + PADDING_END;
@@ -769,7 +797,6 @@ export function ArchiveGallery() {
           };
           
           // Touch handling untuk mobile (swipe detection)
-          let touchStartY = 0;
           let touchHandled = false;
           
           const handleTouchStart = (e: TouchEvent) => {
@@ -778,7 +805,7 @@ export function ArchiveGallery() {
             if (!lenis || !st) return;
             // ALWAYS set touchStartY so that if a touch starts outside the gallery 
             // and moves inside, deltaY isn't calculated against 0.
-            touchStartY = e.touches[0].clientY;
+            touchStartYRef.current = e.touches[0].clientY;
             touchHandled = false;
 
             const currentProgress = cinematicProgress.get();
@@ -796,7 +823,7 @@ export function ArchiveGallery() {
             
             if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
 
-            const deltaY = touchStartY - e.touches[0].clientY;
+            const deltaY = touchStartYRef.current - e.touches[0].clientY;
             const step = deltaY > 0 ? 1 : -1;
             const currentIdx = wallIndexRef.current;
             
