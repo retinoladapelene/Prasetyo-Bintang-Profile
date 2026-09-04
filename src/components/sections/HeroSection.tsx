@@ -39,7 +39,7 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
       <div
         id="marquee-container"
         className="absolute inset-0 z-0 flex flex-col justify-center gap-0 select-none overflow-hidden pointer-events-none"
-        style={{ opacity: 0.001, willChange: "opacity, visibility", transform: "translateZ(0)" }}
+        style={{ opacity: 0.015, willChange: "opacity, visibility", transform: "translateZ(0)" }}
       >
         <div
           className="flex whitespace-nowrap animate-marquee-left w-max"
@@ -75,7 +75,7 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
             id="transition-text"
             className="w-full max-w-6xl relative mb-6 md:mb-8 flex flex-row justify-between items-end z-20 px-6 md:px-12"
             style={{
-              opacity: 0.001,
+              opacity: 0.015,
               transform: 'translateZ(0)',
               willChange: 'transform, opacity, visibility'
             }}
@@ -128,7 +128,7 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
                 <div
                   id="reveal-name-back"
                   className="absolute inset-0 -z-10 flex flex-col justify-end items-center pointer-events-none select-none pb-[7.5vw] md:pb-[10vw]"
-                  style={{ opacity: 0.001, willChange: 'opacity, transform', transform: 'translateZ(0)' }}
+                  style={{ opacity: 0.015, willChange: 'opacity, transform', transform: 'translateZ(0)' }}
                 >
                   <h2 className="font-outfit font-black text-[11vw] md:text-[14.5vw] leading-[0.7] text-[var(--foreground)] tracking-tighter uppercase scale-y-105 origin-bottom">
                     PRASETYO
@@ -138,7 +138,7 @@ export function HeroSection({ imageRef, currentTime, activeTheme, heroSettings, 
                 <div
                   id="reveal-name-front"
                   className="absolute inset-0 z-50 flex flex-col justify-end items-center pointer-events-none select-none pb-0"
-                  style={{ opacity: 0.001, willChange: 'opacity, transform', transform: 'translateZ(0)' }}
+                  style={{ opacity: 0.015, willChange: 'opacity, transform', transform: 'translateZ(0)' }}
                 >
                   <h2 className="font-outfit font-black text-[11vw] md:text-[14.5vw] leading-[0.7] text-[var(--foreground)] tracking-tighter uppercase scale-y-105 origin-bottom">
                     BINTANG

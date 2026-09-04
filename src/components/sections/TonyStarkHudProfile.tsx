@@ -549,7 +549,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
         </motion.div>
 
         <motion.div
-          className="absolute left-4 right-4 top-[60px] z-30 flex flex-col gap-3 lg:gap-4 lg:right-auto lg:left-8 xl:left-12 lg:w-[310px] xl:w-[330px] pointer-events-none"
+          className="absolute left-4 top-[80px] bottom-[100px] z-30 flex flex-col justify-between lg:bottom-auto lg:justify-start lg:gap-4 lg:left-8 xl:left-12 w-[240px] sm:w-[280px] lg:w-[310px] xl:w-[330px] pointer-events-none origin-top-left scale-[0.85] sm:scale-100"
           animate={{ opacity: hudOpacity }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
           style={{ pointerEvents: isAssistantActive ? "none" : undefined }}
@@ -609,7 +609,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
           </Panel3D>
 
           <div
-            className="flex flex-row overflow-x-auto pb-2 gap-2.5 lg:flex-col lg:overflow-visible lg:pb-0 snap-x pointer-events-auto [&::-webkit-scrollbar]:hidden"
+            className="flex flex-col gap-2 pb-2 lg:overflow-visible lg:pb-0 pointer-events-auto"
             onMouseLeave={handleNodesLeave}
             onPointerLeave={handleNodesLeave}
           >
@@ -633,27 +633,27 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
                       onMouseEnter={() => handleNodeEnter(category.id)}
                       onFocus={() => handleNodeEnter(category.id)}
                       onClick={() => activeCategory === category.id ? setActiveCategory(null) : handleNodeEnter(category.id)}
-                      className={`group flex w-[200px] shrink-0 snap-start lg:w-full items-center gap-3 rounded-xl border px-3 py-2 lg:px-3.5 lg:py-2.5 text-left transition-all cursor-pointer md:backdrop-blur-md ${isActive
-                        ? "border-[var(--theme-primary)] bg-[rgb(var(--theme-primary-rgb)/0.15)] shadow-[0_0_22px_rgb(var(--theme-primary-rgb)/0.5)] scale-[1.02]"
+                      className={`group flex w-full flex-row items-center gap-2 lg:gap-3 rounded-lg lg:rounded-xl border px-2.5 py-2 lg:px-3.5 lg:py-2.5 text-left transition-all cursor-pointer md:backdrop-blur-md ${isActive
+                        ? "border-[var(--theme-primary)] bg-[rgb(var(--theme-primary-rgb)/0.15)] shadow-[0_0_22px_rgb(var(--theme-primary-rgb)/0.5)] lg:scale-[1.02]"
                         : "border-[var(--foreground)]/20 bg-[var(--background)]/95 md:bg-[var(--background)]/70 hover:border-[var(--theme-primary)]/70 hover:bg-[var(--background)]/90 hover:shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.35)]"
                         }`}
                     >
-                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all ${isActive
+                      <div className={`flex h-7 w-7 lg:h-9 lg:w-9 shrink-0 items-center justify-center rounded-full border transition-all ${isActive
                         ? "border-[var(--theme-primary)] bg-[rgb(var(--theme-primary-rgb)/0.25)] shadow-[0_0_16px_rgb(var(--theme-primary-rgb)/0.7)] text-[var(--theme-primary)]"
                         : "border-[var(--foreground)]/25 bg-[var(--background)]/50 text-[var(--foreground)]/80 group-hover:border-[var(--theme-primary)] group-hover:text-[var(--theme-primary)]"
                         }`}>
-                        <Icon className="h-4 w-4" strokeWidth={1.8} />
+                        <Icon className="h-3.5 w-3.5 lg:h-4 lg:w-4" strokeWidth={1.8} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className={`text-[11px] font-bold uppercase tracking-[0.16em] transition-colors ${isActive ? "text-[var(--theme-primary)] drop-shadow-[0_0_8px_var(--theme-primary)]" : "text-[var(--foreground)] group-hover:text-[var(--theme-primary)]"
+                        <div className={`text-[10px] lg:text-[11px] font-bold uppercase tracking-[0.12em] lg:tracking-[0.16em] transition-colors leading-tight ${isActive ? "text-[var(--theme-primary)] drop-shadow-[0_0_8px_var(--theme-primary)]" : "text-[var(--foreground)] group-hover:text-[var(--theme-primary)]"
                           }`}>
                           {category.title}
                         </div>
-                        <div className="truncate text-[8px] uppercase tracking-[0.12em] text-[var(--foreground)]/70">
+                        <div className="hidden lg:block truncate text-[8px] uppercase tracking-[0.12em] text-[var(--foreground)]/70 mt-0.5">
                           {category.subtitle}
                         </div>
                       </div>
-                      <div className={`h-2 w-2 rounded-full transition-all ${isActive ? "bg-[var(--theme-primary)] shadow-[0_0_12px_var(--theme-primary)] scale-125" : "bg-[var(--foreground)]/40 group-hover:bg-[var(--theme-primary)]/80"
+                      <div className={`hidden lg:block h-2 w-2 rounded-full transition-all ${isActive ? "bg-[var(--theme-primary)] shadow-[0_0_12px_var(--theme-primary)] scale-125" : "bg-[var(--foreground)]/40 group-hover:bg-[var(--theme-primary)]/80"
                         }`} />
                     </button>
                   </Panel3D>
@@ -664,7 +664,7 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
         </motion.div>
 
         <motion.div
-          className={`absolute left-4 right-4 top-[210px] z-30 lg:top-[75px] lg:left-auto lg:right-8 xl:right-12 lg:w-[320px] xl:w-[350px] ${!activeCategory ? 'hidden lg:block' : 'block'} pointer-events-none`}
+          className={`absolute left-4 right-4 bottom-[195px] top-auto z-40 lg:top-[75px] lg:bottom-auto lg:left-auto lg:right-8 xl:right-12 lg:w-[320px] xl:w-[350px] ${!activeCategory ? 'hidden lg:block' : 'block'} pointer-events-none`}
           onPointerEnter={clearActiveReset}
           onPointerLeave={handleNodesLeave}
           onMouseEnter={clearActiveReset}
@@ -681,8 +681,17 @@ export function TonyStarkHudProfile({ smoothProgress, isAvatarReady = true }: To
               exit={{ opacity: 0, x: -20, rotateY: 12, scale: 0.95 }}
               transition={{ duration: 0.22, ease: "easeOut" }}
               style={{ transformStyle: "preserve-3d", willChange: "transform, opacity" }}
-              className="flex flex-col gap-4"
+              className="relative flex flex-col gap-4 p-5 lg:p-0 rounded-2xl lg:rounded-none bg-[var(--background)]/85 lg:bg-transparent backdrop-blur-md lg:backdrop-blur-none border border-[var(--foreground)]/10 lg:border-none shadow-2xl lg:shadow-none pointer-events-auto"
             >
+              {/* Mobile Close Button */}
+              {activeCategory && (
+                <button 
+                  onClick={() => setActiveCategory(null)}
+                  className="absolute top-4 right-4 lg:hidden p-1.5 rounded-full bg-[var(--foreground)]/10 text-[var(--foreground)]/70 hover:text-[var(--theme-primary)] hover:bg-[var(--theme-primary)]/20 transition-colors z-50"
+                >
+                  <X size={14} />
+                </button>
+              )}
               {activeCategory === "experience" && (
                 <AnimatedHudElement
                   smoothProgress={combinedProgress}

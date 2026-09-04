@@ -62,11 +62,11 @@ export const LoadingScreen = ({ onComplete }: { onComplete: () => void }) => {
           if (originalOnLoad) originalOnLoad();
         };
 
-        // Fallback timer: force finish after 8 seconds in case no 3D models are loaded or network fails
+        // Fallback timer: force finish after 15 seconds in case no 3D models are loaded or network fails
         fallbackTimer = setTimeout(() => {
           threejsLoaded = true;
           checkCompletion();
-        }, 8000);
+        }, 15000);
       });
     });
 

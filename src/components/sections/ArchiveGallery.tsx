@@ -3,7 +3,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent, MotionValue } from "framer-motion";
 import { ArrowUpRight, Terminal, X, Database, BarChart, Code, Shield, Network, Zap, Eye, PenTool, Activity, Rocket } from "lucide-react";
-import { CylinderGalleryScene, GALLERY_CONFIG, GALLERY_TRAVEL } from "@/components/three/CylinderGalleryScene";
+import { CylinderGalleryScene } from "@/components/three/CylinderGalleryScene";
+import { GALLERY_CONFIG, GALLERY_TRAVEL } from "@/components/three/gallery/CylinderGalleryConfig";
 import { ProjectBackground } from "@/components/ui/ProjectBackground";
 import { TonyStarkHudProfile } from "@/components/sections/TonyStarkHudProfile";
 import gsap from "gsap";
@@ -334,6 +335,7 @@ export function ArchiveGallery() {
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAvatarReady, setIsAvatarReady] = useState(false);
+  const [is3DReadyToLoad, setIs3DReadyToLoad] = useState(false);
   const isMounted = useRef(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -367,6 +369,13 @@ export function ArchiveGallery() {
   useEffect(() => {
     isMounted.current = true;
     setLoading(false);
+
+    // DONT DELAY THE 3D SCENE!
+    // We want it to mount immediately so it forces the LoadingScreen to wait for it.
+    // If we delay it, it will compile its shaders EXACTLY when the user starts scrolling,
+    // which causes massive frame drops in the Hero animations.
+    setIs3DReadyToLoad(true);
+
     return () => {
       isMounted.current = false;
     };
@@ -404,7 +413,7 @@ export function ArchiveGallery() {
       // Calculate exact center progress for each gallery panel
       const panelSnapPoints = Array.from(
         { length: galleryItems.length },
-        (_, i) => (PADDING_START + i) / totalSteps
+        (_, i) => ((PADDING_START + i) / totalSteps) * 0.85
       );
 
       // Variables to track last snapped indices to clamp fast scrolling
@@ -448,11 +457,11 @@ export function ArchiveGallery() {
   const backgroundOpacity = useTransform(cinematicProgress, [0.15, 0.18, 0.985, 0.998], [0, 1, 1, 1]);
   const backgroundVisibility = useTransform(cinematicProgress, (val) => (val < 0.14 ? "hidden" : "visible"));
 
-  // Stage 2B: Project UI description text AND 3D Panels appear AFTER background monitors boot up! (0.35 to 0.40)
-  // This ensures they are 100% visible at the first snap point (0.416).
-  const panelsUiOpacity = useTransform(cinematicProgress, [0.35, 0.40, 0.70, 0.75], [0, 1, 1, 0]);
-  const panelsUiVisibility = useTransform(cinematicProgress, (val) => (val < 0.34 || val >= 0.76 ? "hidden" : "visible"));
-  const panelsUiTranslateY = useTransform(cinematicProgress, [0.35, 0.40, 0.70, 0.75], [25, 0, 0, -20]);
+  // Stage 2B: Project UI description text AND 3D Panels appear AFTER background monitors boot up! (0.25 to 0.32)
+  // This ensures they are 100% visible at the first snap point (0.354).
+  const panelsUiOpacity = useTransform(cinematicProgress, [0.25, 0.32, 0.70, 0.75], [0, 1, 1, 0]);
+  const panelsUiVisibility = useTransform(cinematicProgress, (val) => (val < 0.24 || val >= 0.76 ? "hidden" : "visible"));
+  const panelsUiTranslateY = useTransform(cinematicProgress, [0.25, 0.32, 0.70, 0.75], [25, 0, 0, -20]);
 
   // Stage 3: Keep the WebGL canvas alive.
   const sceneOpacity = useTransform(cinematicProgress, [0.985, 0.998], [1, 1]);
@@ -487,29 +496,33 @@ export function ArchiveGallery() {
 
   const [clampedActiveIndex, setClampedActiveIndex] = useState(-1);
   const [clampedWallIndex, setClampedWallIndex] = useState(-1);
+  const [syncTick, setSyncTick] = useState(0);
+  const activeIndexRef = useRef(-1);
   const isSnappingRef = useRef(false);
+  const snapCooldownRef = useRef(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Ref-based tracking untuk wall index (menghindari stale closure di dalam scroll handler)
   const wallIndexRef = useRef(-1);
-  // Timestamp cooldown setelah snap selesai (mencegah momentum sisa Lenis memicu lompatan ganda)
-  const snapCooldownRef = useRef(0);
 
   useEffect(() => {
     // Perfect Snap & Discrete Scroll mechanism:
     // Limit jumping to 1 panel max per swipe and forcefully align the scrollbar to the EXACT perfect center.
-    if (typeof window !== "undefined" && (window as any).lenis) {
-      const lenis = (window as any).lenis;
-      const st = ScrollTrigger.getById("galleryTrigger");
+    if (typeof window === "undefined") return;
+
+      const getLenis = () => (window as any).lenis;
+      const getSt = () => ScrollTrigger.getById("galleryTrigger");
       
       const doSnap = (idx: number, isWall: boolean) => {
-        if (!st || isSnappingRef.current) return;
+        const lenis = getLenis();
+        const st = getSt();
+        if (!lenis || !st || isSnappingRef.current) return;
         isSnappingRef.current = true;
         
         let targetScrollY = 0;
         
         if (!isWall) {
           const totalSteps = (galleryItems.length - 1) + PADDING_START + PADDING_END;
-          const targetProgress = (PADDING_START + idx) / totalSteps;
+          const targetProgress = ((PADDING_START + idx) / totalSteps) * 0.85;
           targetScrollY = st.start + (st.end - st.start) * targetProgress;
         } else {
           // Fase J-Curve Wall Panels (Background Melengkung)
@@ -517,18 +530,17 @@ export function ArchiveGallery() {
             // Snap back to the last Carousel item (keluar dari J-Curve Wall, kembali ke Carousel)
             const lastCarouselIdx = galleryItems.length - 1;
             const totalSteps = lastCarouselIdx + PADDING_START + PADDING_END;
-            const targetProgress = (PADDING_START + lastCarouselIdx) / totalSteps;
+            const targetProgress = ((PADDING_START + lastCarouselIdx) / totalSteps) * 0.85;
             targetScrollY = st.start + (st.end - st.start) * targetProgress;
           } else if (idx >= HERO_PROCESS_ITEMS.length) {
             // Index 5 = IMAX Flat screen fully achieved
             // Snap ke 0.990 (tengah-tengah fase idle IMAX) agar layar IMAX bisa dinikmati lebih lama sebelum blackout
             targetScrollY = st.start + (st.end - st.start) * 0.990; 
           } else {
-            const START_T = 1.40;
-            const isMobile = window.innerWidth < 768;
-            const T_LEFT = isMobile ? 0.56 : 0.37;
-            const SPACING = 1.15;
-            const TRAVEL = START_T - T_LEFT + 4 * SPACING;
+            const START_T = GALLERY_CONFIG.START_T;
+            const T_LEFT = GALLERY_CONFIG.T_LEFT;
+            const SPACING = GALLERY_CONFIG.SPACING;
+            const TRAVEL = GALLERY_TRAVEL;
             
             const wp = (idx * SPACING + START_T - T_LEFT) / TRAVEL;
             // Wall Phase sekarang dipadatkan dari 0.94 ke 0.975
@@ -556,6 +568,7 @@ export function ArchiveGallery() {
             snapCooldownRef.current = Date.now();
             setTimeout(() => {
               isSnappingRef.current = false;
+              setSyncTick(t => t + 1);
             }, 50);
           }
         });
@@ -564,10 +577,11 @@ export function ArchiveGallery() {
         setTimeout(() => {
           snapCooldownRef.current = Date.now();
           isSnappingRef.current = false;
+          setSyncTick(t => t + 1);
         }, snapDuration * 1000 + 100);
       };
 
-      if (st) {
+      if (true) {
         if (!isWallPanel) {
           // Fase J-Curve Carousel (Panel Utama / Convex)
           const diff = activeIndex - clampedActiveIndex;
@@ -580,12 +594,18 @@ export function ArchiveGallery() {
           }
 
           const handleWheel = (e: WheelEvent) => {
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
             // Only intercept if we're actually inside the gallery's pinned area
             const currentProgress = cinematicProgress.get();
             if (currentProgress < 0.1 || currentProgress > 0.85) return;
             
             const step = e.deltaY > 0 ? 1 : -1;
-            const currentIdx = clampedActiveIndex;
+            
+            const totalSteps = (galleryItems.length - 1) + PADDING_START + PADDING_END;
+            const exactIdx = (currentProgress * totalSteps / 0.85) - PADDING_START;
+            const currentIdx = Math.max(-1, Math.min(galleryItems.length - 1, Math.round(exactIdx)));
             const maxIndex = galleryItems.length - 1;
             
             // Allow free scroll when leaving Carousel downwards
@@ -609,7 +629,7 @@ export function ArchiveGallery() {
                 doSnap(clampedNewIndex, false);
               } else {
                 // Let user scroll naturally out of the top
-                const st = ScrollTrigger.getById("galleryTrigger");
+                const st = getSt();
                 if (st) {
                   lenis.scrollTo(st.start - window.innerHeight * 0.5, { duration: 1 });
                 }
@@ -626,33 +646,46 @@ export function ArchiveGallery() {
           let touchHandled = false;
           
           const handleTouchStart = (e: TouchEvent) => {
-            const currentProgress = cinematicProgress.get();
-            if (currentProgress < 0.1 || currentProgress > 0.85) return;
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
+            // ALWAYS set touchStartY so that if a touch starts outside the gallery 
+            // and moves inside, deltaY isn't calculated against 0.
             touchStartY = e.touches[0].clientY;
             touchHandled = false;
+            
+            const currentProgress = cinematicProgress.get();
+            if (currentProgress < 0.1 || currentProgress > 0.85) return;
           };
           
           const handleTouchMove = (e: TouchEvent) => {
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
             const currentProgress = cinematicProgress.get();
             if (currentProgress < 0.1 || currentProgress > 0.85) return;
             
             const deltaY = touchStartY - e.touches[0].clientY;
             const step = deltaY > 0 ? 1 : -1;
-            const currentIdx = clampedActiveIndex;
+            
+            const totalSteps = (galleryItems.length - 1) + PADDING_START + PADDING_END;
+            const exactIdx = (currentProgress * totalSteps / 0.85) - PADDING_START;
+            const currentIdx = Math.max(-1, Math.min(galleryItems.length - 1, Math.round(exactIdx)));
             const maxIndex = galleryItems.length - 1;
             
             // Allow free swipe when leaving Carousel downwards
             if (currentIdx === maxIndex && step > 0) return;
             
             // Allow free swipe when leaving Carousel upwards
-            if (currentIdx <= 0 && step < 0) return;
+            if (currentIdx < 0 && step < 0) return;
 
             e.preventDefault();
+            e.stopImmediatePropagation();
             
             if (touchHandled || isSnappingRef.current) return;
             if (Date.now() - snapCooldownRef.current < 500) return;
             
-            if (Math.abs(deltaY) < 30) return; // Minimum swipe distance
+            if (Math.abs(deltaY) < 10) return; // Minimum swipe distance (Sangat sensitif)
             
             touchHandled = true;
             
@@ -664,7 +697,7 @@ export function ArchiveGallery() {
               if (clampedNewIndex >= 0) {
                 doSnap(clampedNewIndex, false);
               } else {
-                const st = ScrollTrigger.getById("galleryTrigger");
+                const st = getSt();
                 if (st) {
                   lenis.scrollTo(st.start - window.innerHeight * 0.5, { duration: 1 });
                 }
@@ -677,7 +710,7 @@ export function ArchiveGallery() {
           };
 
           window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
-          window.addEventListener('touchstart', handleTouchStart, { passive: true, capture: true });
+          window.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
           window.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
 
           return () => {
@@ -699,9 +732,11 @@ export function ArchiveGallery() {
           // sehingga scroll HANYA bergerak lewat doSnap() yang kita kontrol.
           
           const handleWheel = (e: WheelEvent) => {
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
             const currentProgress = cinematicProgress.get();
-            const st = ScrollTrigger.getById("galleryTrigger");
-            const currentScrollY = (window as any).lenis?.scroll || window.scrollY;
+            const currentScrollY = lenis.scroll || window.scrollY;
             
             // Allow native scroll if user is below the gallery
             if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
@@ -727,7 +762,6 @@ export function ArchiveGallery() {
               setClampedWallIndex(clampedNewIndex);
               doSnap(clampedNewIndex, true);
             } else if (newIndex > maxIndex) {
-              const st = ScrollTrigger.getById("galleryTrigger");
               if (st) {
                 lenis.scrollTo(st.end + window.innerHeight * 0.5, { duration: 1 });
               }
@@ -739,20 +773,26 @@ export function ArchiveGallery() {
           let touchHandled = false;
           
           const handleTouchStart = (e: TouchEvent) => {
-            const currentProgress = cinematicProgress.get();
-            const st = ScrollTrigger.getById("galleryTrigger");
-            const currentScrollY = (window as any).lenis?.scroll || window.scrollY;
-            
-            if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
-            
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
+            // ALWAYS set touchStartY so that if a touch starts outside the gallery 
+            // and moves inside, deltaY isn't calculated against 0.
             touchStartY = e.touches[0].clientY;
             touchHandled = false;
+
+            const currentProgress = cinematicProgress.get();
+            const currentScrollY = lenis.scroll || window.scrollY;
+            
+            if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
           };
           
           const handleTouchMove = (e: TouchEvent) => {
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
             const currentProgress = cinematicProgress.get();
-            const st = ScrollTrigger.getById("galleryTrigger");
-            const currentScrollY = (window as any).lenis?.scroll || window.scrollY;
+            const currentScrollY = lenis.scroll || window.scrollY;
             
             if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
 
@@ -765,11 +805,12 @@ export function ArchiveGallery() {
 
             // Blokir scroll native selama wall phase
             e.preventDefault();
+            e.stopImmediatePropagation();
             
             if (touchHandled || isSnappingRef.current) return;
             if (Date.now() - snapCooldownRef.current < 150) return;
             
-            if (Math.abs(deltaY) < 30) return; // Minimum swipe distance
+            if (Math.abs(deltaY) < 10) return; // Minimum swipe distance (Sangat sensitif)
             
             touchHandled = true;
             
@@ -782,7 +823,6 @@ export function ArchiveGallery() {
               setClampedWallIndex(clampedNewIndex);
               doSnap(clampedNewIndex, true);
             } else if (newIndex > maxIndex) {
-              const st = ScrollTrigger.getById("galleryTrigger");
               if (st) {
                 lenis.scrollTo(st.end + window.innerHeight * 0.5, { duration: 1 });
               }
@@ -791,7 +831,7 @@ export function ArchiveGallery() {
           
           // Capture phase (true) agar fire SEBELUM Lenis dan listener lainnya
           window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
-          window.addEventListener('touchstart', handleTouchStart, { passive: true, capture: true });
+          window.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
           window.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
           
           return () => {
@@ -802,8 +842,9 @@ export function ArchiveGallery() {
           };
         }
       }
-    }
-  }, [activeIndex, clampedActiveIndex, clampedWallIndex, isWallPanel, galleryItems.length]);
+  }, [activeIndex, clampedActiveIndex, clampedWallIndex, isWallPanel, galleryItems.length, syncTick]);
+
+
 
   const safeWallIndex = Math.max(0, Math.min(HERO_PROCESS_ITEMS.length - 1, clampedWallIndex));
   const safeActiveIndex = Math.max(0, Math.min(galleryItems.length - 1, clampedActiveIndex));
@@ -1086,14 +1127,16 @@ export function ArchiveGallery() {
 
           {/* WebGL Cylinder Gallery replacing the old CSS 3D Slice method */}
           <motion.div className="absolute inset-0 pointer-events-none z-10" style={{ opacity: sceneOpacity, visibility: sceneVisibility }}>
-            <CylinderGalleryScene
-              items={galleryItems}
-              wallItems={HERO_PROCESS_ITEMS}
-              smoothProgress={cinematicProgress}
-              onActiveIndexChange={setActiveIndex}
-              onAvatarReady={setIsAvatarReady}
-              className="w-full h-full"
-            />
+            {is3DReadyToLoad && (
+              <CylinderGalleryScene
+                items={galleryItems}
+                wallItems={HERO_PROCESS_ITEMS}
+                smoothProgress={cinematicProgress}
+                onActiveIndexChange={setActiveIndex}
+                onAvatarReady={setIsAvatarReady}
+                className="w-full h-full"
+              />
+            )}
           </motion.div>
 
           {/* ── HUD CONCENTRIC RINGS BACKGROUND (behind 3D avatar, in front of background) ── */}

@@ -11,11 +11,11 @@ if (typeof window !== "undefined") {
 
 export function SmoothScroll({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // Completely disable Lenis on mobile devices for native performance
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent) || window.innerWidth < 768;
-    if (isMobile) {
-      return;
-    }
+    // Lenis diaktifkan di mobile agar fitur programmatic scroll & discrete snapping (seperti di Carousel) dapat bekerja.
+    // const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent) || window.innerWidth < 768;
+    // if (isMobile) {
+    //   return;
+    // }
 
     const lenis = new Lenis({
       duration: 1.2,

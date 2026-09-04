@@ -1,0 +1,345 @@
+  useEffect(() => {
+    // Perfect Snap & Discrete Scroll mechanism:
+    // Limit jumping to 1 panel max per swipe and forcefully align the scrollbar to the EXACT perfect center.
+    if (typeof window === "undefined") return;
+
+      const getLenis = () => (window as any).lenis;
+      const getSt = () => ScrollTrigger.getById("galleryTrigger");
+      
+      const doSnap = (idx: number, isWall: boolean) => {
+        const lenis = getLenis();
+        const st = getSt();
+        if (!lenis || !st || isSnappingRef.current) return;
+        isSnappingRef.current = true;
+        
+        let targetScrollY = 0;
+        
+        if (!isWall) {
+          const totalSteps = (galleryItems.length - 1) + PADDING_START + PADDING_END;
+          const targetProgress = ((PADDING_START + idx) / totalSteps) * 0.85;
+          targetScrollY = st.start + (st.end - st.start) * targetProgress;
+        } else {
+          // Fase J-Curve Wall Panels (Background Melengkung)
+          if (idx === -1) {
+            // Snap back to the last Carousel item (keluar dari J-Curve Wall, kembali ke Carousel)
+            const lastCarouselIdx = galleryItems.length - 1;
+            const totalSteps = lastCarouselIdx + PADDING_START + PADDING_END;
+            const targetProgress = ((PADDING_START + lastCarouselIdx) / totalSteps) * 0.85;
+            targetScrollY = st.start + (st.end - st.start) * targetProgress;
+          } else if (idx >= HERO_PROCESS_ITEMS.length) {
+            // Index 5 = IMAX Flat screen fully achieved
+            // Snap ke 0.990 (tengah-tengah fase idle IMAX) agar layar IMAX bisa dinikmati lebih lama sebelum blackout
+            targetScrollY = st.start + (st.end - st.start) * 0.990; 
+          } else {
+            const START_T = GALLERY_CONFIG.START_T;
+            const T_LEFT = GALLERY_CONFIG.T_LEFT;
+            const SPACING = GALLERY_CONFIG.SPACING;
+            const TRAVEL = GALLERY_TRAVEL;
+            
+            const wp = (idx * SPACING + START_T - T_LEFT) / TRAVEL;
+            // Wall Phase sekarang dipadatkan dari 0.94 ke 0.975
+            const smoothedScroll = 0.94 + wp * (0.975 - 0.94);
+            targetScrollY = st.start + (st.end - st.start) * smoothedScroll;
+          }
+        }
+        
+        // Hitung durasi dinamis: jika melompat jauh (antar phase), buat lebih lambat dan gentle
+        const currentScrollY = lenis.scroll;
+        const distance = Math.abs(targetScrollY - currentScrollY);
+        const isFar = distance > window.innerHeight * 1.5;
+        const snapDuration = isFar ? 1.2 : 0.5;
+        
+        // Scroll ke panel terdekat
+        // Gunakan force: true dan lock: true agar animasi tidak dibatalkan dan 
+        // native scroll tidak melompat jauh (terlempar) saat user melakukan swipe keras.
+        lenis.scrollTo(targetScrollY, { 
+          duration: snapDuration, 
+          easing: (t: number) => 1 - Math.pow(1 - t, 4), // easeOutQuart
+          force: true,
+          lock: true,
+          onComplete: () => {
+            // Set cooldown agar momentum sisa Lenis tidak langsung memicu snap berikutnya
+            snapCooldownRef.current = Date.now();
+            setTimeout(() => {
+              isSnappingRef.current = false;
+              setSyncTick(t => t + 1);
+            }, 50);
+          }
+        });
+
+        // Safety unlock in case onComplete fails to fire (e.g., if already at target position)
+        setTimeout(() => {
+          snapCooldownRef.current = Date.now();
+          isSnappingRef.current = false;
+          setSyncTick(t => t + 1);
+        }, snapDuration * 1000 + 100);
+      };
+
+      if (true) {
+        if (!isWallPanel) {
+          // Fase J-Curve Carousel (Panel Utama / Convex)
+          const diff = activeIndex - clampedActiveIndex;
+          
+          if (diff !== 0 && !isSnappingRef.current) {
+            // Update UI teks/deskripsi, tapi jangan biarkan melompat lebih dari 1 jika user swipe keras
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+            const step = diff > 0 ? 1 : -1;
+            setClampedActiveIndex(clampedActiveIndex + step); 
+          }
+
+          const handleWheel = (e: WheelEvent) => {
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
+            // Only intercept if we're actually inside the gallery's pinned area
+            const currentProgress = cinematicProgress.get();
+            if (currentProgress < 0.1 || currentProgress > 0.85) return;
+            
+            const step = e.deltaY > 0 ? 1 : -1;
+            
+            const totalSteps = (galleryItems.length - 1) + PADDING_START + PADDING_END;
+            const exactIdx = (currentProgress * totalSteps / 0.85) - PADDING_START;
+            const currentIdx = Math.max(-1, Math.min(galleryItems.length - 1, Math.round(exactIdx)));
+            const maxIndex = galleryItems.length - 1;
+            
+            // Allow free scroll when leaving Carousel downwards
+            if (currentIdx === maxIndex && step > 0) return;
+            
+            // Allow free scroll when leaving Carousel upwards (to top of page)
+            if (currentIdx <= 0 && step < 0) return;
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            
+            if (isSnappingRef.current) return;
+            if (Date.now() - snapCooldownRef.current < 150) return;
+            
+            const newIndex = currentIdx + step;
+            const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
+            
+            if (clampedNewIndex !== currentIdx) {
+              setClampedActiveIndex(clampedNewIndex);
+              if (clampedNewIndex >= 0) {
+                doSnap(clampedNewIndex, false);
+              } else {
+                // Let user scroll naturally out of the top
+                const st = getSt();
+                if (st) {
+                  lenis.scrollTo(st.start - window.innerHeight * 0.5, { duration: 1 });
+                }
+              }
+            } else if (newIndex > maxIndex) {
+              // Now handled by free scroll above
+            } else if (newIndex < -1) {
+              // Now handled by free scroll above
+            }
+          };
+
+          // Touch handling untuk mobile (swipe detection)
+          let touchStartY = 0;
+          let touchHandled = false;
+          
+          const handleTouchStart = (e: TouchEvent) => {
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
+            // ALWAYS set touchStartY so that if a touch starts outside the gallery 
+            // and moves inside, deltaY isn't calculated against 0.
+            touchStartY = e.touches[0].clientY;
+            touchHandled = false;
+            
+            const currentProgress = cinematicProgress.get();
+            if (currentProgress < 0.1 || currentProgress > 0.85) return;
+          };
+          
+          const handleTouchMove = (e: TouchEvent) => {
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
+            const currentProgress = cinematicProgress.get();
+            if (currentProgress < 0.1 || currentProgress > 0.85) return;
+            
+            const deltaY = touchStartY - e.touches[0].clientY;
+            const step = deltaY > 0 ? 1 : -1;
+            
+            const totalSteps = (galleryItems.length - 1) + PADDING_START + PADDING_END;
+            const exactIdx = (currentProgress * totalSteps / 0.85) - PADDING_START;
+            const currentIdx = Math.max(-1, Math.min(galleryItems.length - 1, Math.round(exactIdx)));
+            const maxIndex = galleryItems.length - 1;
+            
+            // Allow free swipe when leaving Carousel downwards
+            if (currentIdx === maxIndex && step > 0) return;
+            
+            // Allow free swipe when leaving Carousel upwards
+            if (currentIdx < 0 && step < 0) return;
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            
+            if (touchHandled || isSnappingRef.current) return;
+            if (Date.now() - snapCooldownRef.current < 500) return;
+            
+            if (Math.abs(deltaY) < 10) return; // Minimum swipe distance (Sangat sensitif)
+            
+            touchHandled = true;
+            
+            const newIndex = currentIdx + step;
+            const clampedNewIndex = Math.max(-1, Math.min(maxIndex, newIndex));
+            
+            if (clampedNewIndex !== currentIdx) {
+              setClampedActiveIndex(clampedNewIndex);
+              if (clampedNewIndex >= 0) {
+                doSnap(clampedNewIndex, false);
+              } else {
+                const st = getSt();
+                if (st) {
+                  lenis.scrollTo(st.start - window.innerHeight * 0.5, { duration: 1 });
+                }
+              }
+            } else if (newIndex > maxIndex) {
+              // Now handled by free scroll
+            } else if (newIndex < -1) {
+              // Now handled by free scroll
+            }
+          };
+
+          window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+          window.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
+          window.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+
+          return () => {
+            window.removeEventListener('wheel', handleWheel, { capture: true });
+            window.removeEventListener('touchstart', handleTouchStart, { capture: true });
+            window.removeEventListener('touchmove', handleTouchMove, { capture: true });
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+          };
+          
+        } else {
+          // Fase J-Curve Wall Panels (Background Melengkung)
+          // Sinkronisasi ref dari state setiap kali effect berjalan ulang
+          wallIndexRef.current = clampedWallIndex;
+
+          // STRATEGI ANTI-TRAVELING:
+          // Alih-alih mendengarkan Lenis scroll event (yang sudah terlambat — Lenis sudah menggerakkan view),
+          // kita INTERCEPT wheel event di capture phase SEBELUM Lenis memprosesnya.
+          // preventDefault() + stopImmediatePropagation() memblokir Lenis sepenuhnya,
+          // sehingga scroll HANYA bergerak lewat doSnap() yang kita kontrol.
+          
+          const handleWheel = (e: WheelEvent) => {
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
+            const currentProgress = cinematicProgress.get();
+            const st = getSt();
+            const currentScrollY = lenis.scroll || window.scrollY;
+            
+            // Allow native scroll if user is below the gallery
+            if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
+
+            const step = e.deltaY > 0 ? 1 : -1;
+            const currentIdx = wallIndexRef.current;
+            
+            // Allow free scroll when leaving Wall Phase upwards
+            if (currentIdx <= 0 && step < 0) return;
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            
+            if (isSnappingRef.current) return;
+            if (Date.now() - snapCooldownRef.current < 150) return;
+            
+            const maxIndex = HERO_PROCESS_ITEMS.length - 1;
+            const newIndex = currentIdx + step;
+            const clampedNewIndex = Math.max(0, Math.min(maxIndex, newIndex));
+            
+            if (clampedNewIndex !== currentIdx) {
+              wallIndexRef.current = clampedNewIndex;
+              setClampedWallIndex(clampedNewIndex);
+              doSnap(clampedNewIndex, true);
+            } else if (newIndex > maxIndex) {
+              const st = getSt();
+              if (st) {
+                lenis.scrollTo(st.end + window.innerHeight * 0.5, { duration: 1 });
+              }
+            }
+          };
+          
+          // Touch handling untuk mobile (swipe detection)
+          let touchStartY = 0;
+          let touchHandled = false;
+          
+          const handleTouchStart = (e: TouchEvent) => {
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
+            // ALWAYS set touchStartY so that if a touch starts outside the gallery 
+            // and moves inside, deltaY isn't calculated against 0.
+            touchStartY = e.touches[0].clientY;
+            touchHandled = false;
+
+            const currentProgress = cinematicProgress.get();
+            const st = getSt();
+            const currentScrollY = lenis.scroll || window.scrollY;
+            
+            if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
+          };
+          
+          const handleTouchMove = (e: TouchEvent) => {
+            const lenis = getLenis();
+            const st = getSt();
+            if (!lenis || !st) return;
+            const currentProgress = cinematicProgress.get();
+            const st = getSt();
+            const currentScrollY = lenis.scroll || window.scrollY;
+            
+            if (currentProgress < 0.940 || !st || currentScrollY > st.end + 50) return;
+
+            const deltaY = touchStartY - e.touches[0].clientY;
+            const step = deltaY > 0 ? 1 : -1;
+            const currentIdx = wallIndexRef.current;
+            
+            // Allow free swipe when leaving Wall Phase upwards
+            if (currentIdx <= 0 && step < 0) return;
+
+            // Blokir scroll native selama wall phase
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            
+            if (touchHandled || isSnappingRef.current) return;
+            if (Date.now() - snapCooldownRef.current < 150) return;
+            
+            if (Math.abs(deltaY) < 10) return; // Minimum swipe distance (Sangat sensitif)
+            
+            touchHandled = true;
+            
+            const maxIndex = HERO_PROCESS_ITEMS.length - 1;
+            const newIndex = currentIdx + step;
+            const clampedNewIndex = Math.max(0, Math.min(maxIndex, newIndex));
+            
+            if (clampedNewIndex !== currentIdx) {
+              wallIndexRef.current = clampedNewIndex;
+              setClampedWallIndex(clampedNewIndex);
+              doSnap(clampedNewIndex, true);
+            } else if (newIndex > maxIndex) {
+              const st = getSt();
+              if (st) {
+                lenis.scrollTo(st.end + window.innerHeight * 0.5, { duration: 1 });
+              }
+            }
+          };
+          
+          // Capture phase (true) agar fire SEBELUM Lenis dan listener lainnya
+          window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+          window.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
+          window.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+          
+          return () => {
+            window.removeEventListener('wheel', handleWheel, { capture: true });
+            window.removeEventListener('touchstart', handleTouchStart, { capture: true });
+            window.removeEventListener('touchmove', handleTouchMove, { capture: true });
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+          };
+        }
+      }
+  }, [activeIndex, clampedActiveIndex, clampedWallIndex, isWallPanel, galleryItems.length, syncTick]);
+

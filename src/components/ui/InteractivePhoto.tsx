@@ -98,9 +98,10 @@ export function InteractivePhoto({ settings }: { settings: any }) {
     }
 
     let isMounted = true;
+    let interval: NodeJS.Timeout | null = null;
 
     const triggerSplatter = () => {
-      if (!isMounted) return;
+      if (!isMounted || window.scrollY > 50) return;
       const num = Math.floor(Math.random() * 2) + 1; // 1 to 2 organic ink splatters
       const splatters = Array.from({ length: num }).map((_, i) => ({
         id: Date.now() + i,
@@ -113,16 +114,30 @@ export function InteractivePhoto({ settings }: { settings: any }) {
       setActiveSplatters(splatters);
     };
 
-    const interval = setInterval(triggerSplatter, 5000);
-    triggerSplatter();
+    const scrollHandler = () => {
+      if (window.scrollY > 50) {
+        setActiveSplatters([]); // Clear immediately when scrolled
+      }
+    };
+    
+    window.addEventListener('scroll', scrollHandler, { passive: true });
+
+    interval = setInterval(triggerSplatter, 5000);
+    
+    // Check initial scroll
+    if (window.scrollY <= 50) {
+      triggerSplatter();
+    }
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
+      window.removeEventListener('scroll', scrollHandler);
     };
   }, [isInteracting]);
 
   const handlePointerMove = (e: React.PointerEvent) => {
+    if (window.scrollY > 50) return; // Prevent interaction if scrolled
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
     const x = e.clientX - rect.left;
@@ -345,7 +360,7 @@ export function InteractivePhoto({ settings }: { settings: any }) {
           />
         </div>
 
-        <div id="full-color-layer" className="absolute inset-0 z-25 select-none overflow-hidden pointer-events-none" style={{ opacity: 0.001, transform: "translateZ(5px)", willChange: "transform, opacity" }}>
+        <div id="full-color-layer" className="absolute inset-0 z-25 select-none overflow-hidden pointer-events-none" style={{ opacity: 0.015, transform: "translateZ(5px)", willChange: "transform, opacity" }}>
           <Image
             src={maskPhoto}
             alt="Personal Photo Full Color"
